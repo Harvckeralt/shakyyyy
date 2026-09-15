@@ -411,7 +411,15 @@
   $('previewImgFile').addEventListener('change',function(){const f=this.files&&this.files[0];if(!f)return;const url=URL.createObjectURL(f),im=new Image();im.onload=()=>{previewImg=im;const cvs=$('previewCanvas'),scale=Math.min(640/im.naturalWidth,1);cvs.width=Math.round(im.naturalWidth*scale);cvs.height=Math.round(im.naturalHeight*scale);cvs.getContext('2d').drawImage(im,0,0,cvs.width,cvs.height);$('playPreviewBtn').disabled=false;URL.revokeObjectURL(url);};im.src=url;});
   $('playPreviewBtn').addEventListener('click',function(){if(!previewImg)return;if(previewRAF)cancelAnimationFrame(previewRAF);previewStartTime=null;const cvs=$('previewCanvas'),ctx=cvs.getContext('2d'),params=readShakeParams();function step(ts){if(previewStartTime===null)previewStartTime=ts;const elapsed=(ts-previewStartTime)/1000;if(elapsed>=params.duration){renderShakeToCanvas(ctx,previewImg,cvs.width,cvs.height,params.duration,params);ctx.clearRect(0,0,cvs.width,cvs.height);ctx.drawImage(previewImg,0,0,cvs.width,cvs.height);previewRAF=null;return;}renderShakeToCanvas(ctx,previewImg,cvs.width,cvs.height,Math.min(elapsed,params.duration),params);previewRAF=requestAnimationFrame(step);}renderShakeToCanvas(ctx,previewImg,cvs.width,cvs.height,0,params);previewRAF=requestAnimationFrame(step);});
 
-  const video1=document.createElement('video');video1.muted=true;video1.playsInline=true;let video1Ready=false,scanCancelled=false,triggers=[];
+  const video1=document.createElement('video');video1.muted=true;video1.playsInline=true;
+  // Keep it in the document (just invisible) rather than fully detached.
+  // Some browsers — mobile Safari in particular — throttle or suspend decode
+  // and stop firing requestVideoFrameCallback for video elements that are
+  // never actually attached/rendered anywhere, which made scanning silently
+  // stall partway through with no error.
+  video1.style.cssText='position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;';
+  document.body.appendChild(video1);
+  let video1Ready=false,scanCancelled=false,triggers=[];
   $('video1File').addEventListener('change',function(){const f=this.files&&this.files[0];if(!f)return;$('video1Name').textContent=f.name;const url=URL.createObjectURL(f);video1Ready=false;video1.src=url;video1.addEventListener('loadedmetadata',function onMeta(){video1.removeEventListener('loadedmetadata',onMeta);video1Ready=true;$('scanBtn').disabled=!pattern;setStatus('scanStatus','Video 1 loaded — '+video1.videoWidth+'×'+video1.videoHeight+', '+video1.duration.toFixed(2)+'s.','ok');},{once:true});});
   function seekTo(video,t){return new Promise(resolve=>{function onSeeked(){video.removeEventListener('seeked',onSeeked);resolve();}video.addEventListener('seeked',onSeeked);video.currentTime=Math.min(Math.max(t,0),Math.max(video.duration-.001,0));});}
   function similarity(imageData,patternPixels){
@@ -440,7 +448,8 @@
     offCenter.width=pattern.center.width;offCenter.height=pattern.center.height;
     const cctx=offCenter.getContext('2d'),fctx=offFull.getContext('2d');
     fctx.imageSmoothingEnabled=true;cctx.imageSmoothingEnabled=true;
-    let eventArmed=true,unmatchedFrames=3,lastSampleTime=-Infinity;
+    let eventArmed=true,unmatchedFrames=3,lastSampleTime=-Infinity,stalled=false;
+    const STALL_MS=6000; // if no new frame callback arrives for this long, something's stuck
 
     // Do not repeatedly seek Video 1. Repeated currentTime seeks can cause some
     // browsers/devices to jump back to the beginning or stall while decoding.
@@ -490,12 +499,13 @@
           $('scanStatus').textContent='Scanning… '+Math.round(100*clamp(t/Math.max(total,.001),0,1))+'%';
         };
 
-        let settled=false,rafId=null,rvfcId=null;
+        let settled=false,rafId=null,rvfcId=null,watchdogId=null,lastTickAt=performance.now();
         const finish=()=>{
           if(settled)return;
           settled=true;
           if(rafId!==null)cancelAnimationFrame(rafId);
           if(rvfcId!==null&&video1.cancelVideoFrameCallback)video1.cancelVideoFrameCallback(rvfcId);
+          if(watchdogId!==null)clearInterval(watchdogId);
           video1.pause();
           resolve();
         };
@@ -503,6 +513,7 @@
         const useRVFC='requestVideoFrameCallback' in HTMLVideoElement.prototype;
         const tick=(now,meta)=>{
           if(settled)return;
+          lastTickAt=performance.now();
           if(scanCancelled){finish();return;}
           const before=video1.currentTime;
           processFrame(useRVFC&&meta?meta.mediaTime:before);
@@ -510,8 +521,18 @@
           if(useRVFC)rvfcId=video1.requestVideoFrameCallback(tick);
           else rafId=requestAnimationFrame((ts)=>tick(ts,null));
         };
+        // Watchdog: if no frame callback shows up for STALL_MS (buffering
+        // stall, backgrounded tab throttling decode, codec hiccup, etc.),
+        // stop waiting instead of hanging forever with a frozen progress bar.
+        watchdogId=setInterval(()=>{
+          if(settled)return;
+          if(performance.now()-lastTickAt>STALL_MS){stalled=true;finish();}
+        },1000);
         if(useRVFC)rvfcId=video1.requestVideoFrameCallback(tick);else rafId=requestAnimationFrame((ts)=>tick(ts,null));
       });
+      if(stalled){
+        setStatus('scanStatus','Scan stalled — Video 1 stopped producing new frames for '+(STALL_MS/1000)+'s partway through (buffering stall, tab backgrounded, or a decode hiccup). Try re-encoding the file, lowering the scan rate, or keeping the tab in the foreground while scanning.','warn');
+      }
     }catch(e){
       if(window.__showShakyyyyError)window.__showShakyyyyError('Scan error',e&&e.message?e.message:String(e),'',0,0,e&&e.stack);
       setStatus('scanStatus','Scan failed — see the red error bar above.','warn');

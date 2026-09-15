@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shakyyyy</title>
+<style>
+  :root{
+    --bg:#0e1013; --panel:#161920; --panel-2:#1d2129; --line:#2a2f3a;
+    --text:#e8eaee; --muted:#8a90a0;
+    --lock:#ff4d6d; --seek:#4cc9f0; --spiral:#b967ff; --ok:#6ee7a8; --warn:#ffb454;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;}
+  .app{max-width:1180px;margin:0 auto;padding:28px 18px 70px;}
+  header.top{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px;padding-bottom:18px;border-bottom:1px solid var(--line);}
+  header.top h1{margin:0;font-size:1.5rem;font-weight:700;letter-spacing:-.01em;}
+  header.top h1 span{color:var(--spiral);}
+  header.top p{margin:4px 0 0;color:var(--muted);font-size:.92rem;max-width:55ch;}
+  .stage-tag{font-size:.78rem;color:var(--muted);border:1px solid var(--line);padding:5px 10px;border-radius:6px;white-space:nowrap;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:16px;}
+  .card h2{margin:0 0 4px;font-size:1rem;font-weight:600;}
+  .card .hint{margin:0 0 14px;color:var(--muted);font-size:.83rem;line-height:1.5;}
+  .step-mark{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:5px;background:var(--panel-2);border:1px solid var(--line);font-size:.72rem;color:var(--muted);margin-right:8px;}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px;}
+  .btn{appearance:none;border:1px solid var(--line);background:var(--panel-2);color:var(--text);padding:9px 14px;border-radius:7px;font-size:.85rem;cursor:pointer;font-weight:500;display:inline-block;text-align:center;}
+  .btn:hover{border-color:#3a4152;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+  .btn.primary{background:var(--spiral);border-color:var(--spiral);color:#160822;font-weight:700;}
+  .btn.primary:hover{background:#c785ff;}
+  .btn.primary:disabled{background:var(--panel-2);border-color:var(--line);color:var(--muted);}
+  .btn.ghost{background:transparent;}
+  .btn.danger{border-color:var(--lock);color:var(--lock);background:transparent;}
+  input[type="file"]{display:none;}
+  textarea.jsonbox{width:100%;height:130px;background:#0b0d10;border:1px solid var(--line);color:#b9c4d4;border-radius:8px;padding:12px;font-family:"SF Mono",Menlo,Consolas,monospace;font-size:.72rem;line-height:1.5;resize:vertical;}
+  .field{margin-top:14px;}
+  .field label{display:flex;justify-content:space-between;font-size:.83rem;margin-bottom:6px;}
+  .field label .val{color:var(--muted);font-variant-numeric:tabular-nums;}
+  .field .subnote{display:block;color:var(--muted);font-size:.72rem;margin-top:4px;font-weight:400;}
+  .field input[type="range"]{width:100%;accent-color:var(--spiral);}
+  .field input[type="number"], .field select{width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);padding:8px 10px;border-radius:6px;font-size:.85rem;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+  @media (max-width:640px){ .grid3{grid-template-columns:1fr 1fr;} }
+  details.adv{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-top:18px;}
+  details.adv summary{cursor:pointer;font-size:.85rem;font-weight:700;color:var(--warn);list-style:none;}
+  details.adv summary::-webkit-details-marker{display:none;}
+  details.adv summary::before{content:"▸ ";}
+  details.adv[open] summary::before{content:"▾ ";}
+  details.adv[open] summary{margin-bottom:12px;}
+  details.adv .hint{margin-top:-4px;}
+  .pattern-summary{display:flex;gap:14px;align-items:center;margin-top:10px;}
+  .swatch-lg{width:44px;height:44px;border-radius:8px;border:1px solid var(--line);flex-shrink:0;}
+  .pattern-summary .meta{font-size:.78rem;color:var(--muted);line-height:1.6;}
+  .pattern-summary .meta b{color:var(--text);}
+  canvas.stage-canvas{width:100%;height:auto;display:block;background:#000;border-radius:8px;border:1px solid var(--line);touch-action:none;}
+  .canvas-wrap{position:relative;}
+  .legend{position:absolute;top:10px;left:10px;display:flex;gap:10px;flex-wrap:wrap;pointer-events:none;}
+  .legend span{font-size:.72rem;padding:4px 8px;border-radius:5px;background:rgba(14,16,19,.75);display:flex;align-items:center;gap:6px;}
+  .swatch{width:9px;height:9px;border-radius:2px;display:inline-block;}
+  .status-line{font-size:.78rem;color:var(--muted);margin-top:10px;min-height:1.2em;}
+  .status-line.ok{color:var(--ok);}
+  .status-line.warn{color:var(--warn);}
+  .progress{height:6px;background:var(--panel-2);border-radius:3px;overflow:hidden;margin-top:12px;border:1px solid var(--line);}
+  .progress > div{height:100%;background:var(--spiral);width:0%;transition:width .1s linear;}
+  table.trig{width:100%;border-collapse:collapse;margin-top:12px;font-size:.8rem;}
+  table.trig th{text-align:left;color:var(--muted);font-weight:500;padding:6px 8px;border-bottom:1px solid var(--line);}
+  table.trig td{padding:6px 8px;border-bottom:1px solid var(--line);}
+  table.trig button{background:none;border:none;color:var(--lock);cursor:pointer;font-size:.9rem;}
+  .empty-note{color:var(--muted);font-size:.82rem;padding:14px;text-align:center;border:1px dashed var(--line);border-radius:8px;}
+  .scan-warning{margin:16px 0;padding:16px 18px;border:2px solid var(--warn);border-radius:10px;background:rgba(255,193,7,.12);color:var(--text);font-size:1.05rem;line-height:1.5;box-shadow:0 3px 14px rgba(0,0,0,.18);}
+  .scan-warning strong{font-size:1.15rem;}
+  .file-chosen{font-size:.78rem;color:var(--ok);margin-left:2px;}
+  .divider-hint{margin:16px 0 0;color:var(--muted);font-size:.78rem;border-top:1px dashed var(--line);padding-top:14px;}
+  footer.note{margin-top:26px;color:var(--muted);font-size:.78rem;line-height:1.6;border-top:1px solid var(--line);padding-top:16px;}
+  #errorBar{display:none;position:sticky;top:0;z-index:9999;background:#b00020;color:#fff;border:2px solid #ff5a70;border-radius:8px;padding:11px 14px;margin:0 0 16px;font:600 .82rem/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;box-shadow:0 4px 18px rgba(0,0,0,.35);white-space:pre-wrap;word-break:break-word;}
+  #errorBar.show{display:block;}
+  #errorBar small{display:block;font:500 .72rem/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;opacity:.9;margin-top:4px;}
+</style>
+</head>
+<body>
+<div id="errorBar" role="alert" aria-live="assertive"></div>
+<div class="app">
+  <header class="top">
+    <div>
+      <h1>Shak<span>yyyy</span></h1>
+      <p>Scans a video for a flash pattern, then punches in a decaying spiral shake on the real clip wherever it's found.</p>
+    </div>
+    <div class="stage-tag">prototype — browser-only</div>
+  </header>
+
+  <div class="card">
+    <h2><span class="step-mark">1</span>Load the pattern</h2>
+    <p class="hint">Upload the pattern image and it's converted to matching data right here — drag to mark just the flash pattern, or leave it to use the whole frame.</p>
+    <div class="row">
+      <label class="btn primary" for="patternImageFile">Upload pattern image</label>
+      <input type="file" id="patternImageFile" accept="image/*">
+    </div>
+    <div id="patternCropWrap" style="display:none;margin-top:12px;">
+      <div class="canvas-wrap">
+        <canvas class="stage-canvas" id="patternViewCanvas"></canvas>
+        <div class="legend">
+          <span><i class="swatch" style="background:var(--lock)"></i>full pattern</span>
+          <span><i class="swatch" style="background:var(--seek)"></i>center check</span>
+        </div>
+      </div>
+      <div class="grid3">
+        <div class="field"><label>Full resolution <span class="val" id="pFullResVal">32</span></label><input type="number" id="pFullRes" min="4" max="128" value="32"></div>
+        <div class="field"><label>Center resolution <span class="val" id="pCenterResVal">8</span></label><input type="number" id="pCenterRes" min="2" max="64" value="8"></div>
+        <div class="field"><label>Center crop size <span class="val" id="pCenterRatioVal">30%</span></label><input type="range" id="pCenterRatio" min="10" max="60" step="5" value="30"></div>
+      </div>
+      <div class="row"><button class="btn ghost" id="pWholeBtn">Use whole image</button><button class="btn primary" id="extractPatternBtn">Extract &amp; use pattern</button></div>
+    </div>
+    <p class="divider-hint">Already have pattern JSON from before? Paste or upload it instead.</p>
+    <div class="row"><label class="btn" for="patternFile">Upload pattern JSON</label><input type="file" id="patternFile" accept="application/json,.json"><span class="file-chosen" id="patternFileName"></span></div>
+    <textarea class="jsonbox" id="patternPaste" placeholder="…or paste pattern JSON here"></textarea>
+    <div class="row"><button class="btn" id="loadPatternBtn">Use this pattern</button></div>
+    <div id="patternSummary" style="display:none;"><div class="pattern-summary"><canvas class="swatch-lg" id="patternSwatch" width="44" height="44"></canvas><div class="meta" id="patternMetaText"></div></div></div>
+    <div class="status-line" id="patternStatus"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step-mark">2</span>Shake shape</h2>
+    <p class="hint">Tune the spiral shake and preview it looping on a still image. Magnitude controls the orbit radius; Rotation is the number of laps around the orbit point.</p>
+    <div class="grid3">
+      <div class="field"><label>Duration <span class="val" id="durVal">0.50s</span></label><input type="range" id="durInput" min="0.1" max="2" step="0.05" value="0.5"></div>
+      <div class="field"><label>Frequency <span class="val" id="freqVal">4.0 Hz</span></label><input type="range" id="freqInput" min="0.5" max="25" step="0.1" value="4"><span class="subnote">Used by Pulse / Bounce and available to custom graphs.</span></div>
+      <div class="field"><label>Rotation <span class="val" id="rotVal">3.0 laps</span></label><input type="range" id="rotInput" min="0" max="10" step="0.1" value="3"><span class="subnote">How many times it laps around the orbit point.</span></div>
+      <div class="field"><label>Magnitude <span class="val" id="zoomVal">15%</span></label><input type="range" id="zoomInput" min="0" max="50" step="1" value="15"><span class="subnote">How far out the orbit swings.</span></div>
+      <div class="field"><label>Scatter <span class="val" id="scatterVal">10 px</span></label><input type="range" id="scatterInput" min="0" max="100" step="1" value="10"><span class="subnote">Adds a new slight random destination offset every 0.1s.</span></div>
+      <div class="field"><label>Jitter method</label><select id="advScatterModeInput"><option value="smooth" selected>Smooth</option><option value="step">Step</option></select><span class="subnote">How the random scatter moves between destinations.</span></div>
+      <div class="field"><label>Direction</label><select id="rotationDirectionInput"><option value="1" selected>Clockwise</option><option value="-1">Counter-clockwise</option></select></div>
+      <div class="field">
+        <label>Graph</label>
+        <select id="graphInput">
+          <option value="linear">Linear</option>
+          <option value="exponential">Exponential (snappier)</option>
+          <option value="easeOut">Ease out (soft tail)</option>
+          <option value="easeIn">Ease in (slow start)</option>
+          <option value="easeInOut">Ease in-out</option>
+          <option value="pulse">Pulse (wobbles at Frequency)</option>
+          <option value="bounce">Bounce (settles in a few beats)</option>
+          <option value="sine">Sine decay</option>
+          <option value="spring">Spring</option>
+          <option value="custom">Custom</option>
+        </select>
+        <span class="subnote">Controls how shake strength changes over time.</span>
+      </div>
+    </div>
+
+    <details class="adv">
+      <summary>Advanced options (don't touch if you don't understand)</summary>
+      <p class="hint">These expose the lower-level motion math. The defaults are designed to behave sensibly.</p>
+      <div class="grid3">
+        <div class="field"><label>Exponential decay rate</label><input type="number" id="advEnvExpInput" min="0.5" max="20" step="0.5" value="4"></div>
+        <div class="field"><label>Ease power</label><input type="number" id="advEasePowerInput" min="0.5" max="8" step="0.5" value="2"></div>
+        <div class="field"><label>Bounce count</label><input type="number" id="advBounceCountInput" min="1" max="12" step="1" value="3"></div>
+        <div class="field"><label>Orbit start phase (°)</label><input type="number" id="advPhaseInput" min="-360" max="360" step="5" value="0"></div>
+        <div class="field"><label>Scatter interval (s)</label><input type="number" id="advScatterIntervalInput" min="0.02" max="1" step="0.01" value="0.1"></div>
+        <div class="field"><label>Scatter seed</label><input type="number" id="advScatterSeedInput" min="0" max="9999" step="1" value="0"></div>
+        <div class="field"><label>Mirror tile radius</label><input type="number" id="advMirrorRadiusInput" min="1" max="3" step="1" value="1"><span class="subnote">1 = 3×3 mirrored tiles, 2 = 5×5.</span></div>
+        <div class="field"><label>Re-trigger cooldown (s)</label><input type="number" id="advCooldownInput" min="0.05" max="3" step="0.01" value="0.05"><span class="subnote">0.05s prevents duplicate detections while allowing every real pattern appearance.</span></div>
+        <div class="field"><label>Detection scan rate (fps)</label><input type="number" id="advScanFpsInput" min="15" max="120" step="1" value="60"></div>
+        <div class="field"><label>Custom graph frequency (Hz)</label><input type="number" id="advCustomFreqInput" min="0.01" max="25" step="0.01" value="4"><span class="subnote">Custom graph frequency, capped at 25 Hz.</span></div>
+        <div class="field"><label>Custom graph phase (cycles)</label><input type="number" id="advCustomPhaseInput" min="-10" max="10" step="0.01" value="0"></div>
+        <div class="field"><label>Custom graph mix</label><input type="range" id="advCustomMixInput" min="0" max="1" step="0.01" value="0.5"><span class="subnote">Blend between fade and oscillation.</span></div>
+        <div class="field"><label>Orbit radius multiplier</label><input type="number" id="advRadiusMultiplierInput" min="0" max="10" step="0.05" value="1"></div>
+        <div class="field"><label>Trigger mode</label><select id="advTriggerModeInput"><option value="cooldown">0.05s cooldown</option><option value="rising">Rising-edge only</option></select><span class="subnote">Rising-edge mode triggers when the match goes from below to above threshold.</span></div>
+        <div class="field"><label>Shake centre X (%)</label><input type="number" id="advCenterXInput" min="-100" max="100" step="1" value="0"></div>
+        <div class="field"><label>Shake centre Y (%)</label><input type="number" id="advCenterYInput" min="-100" max="100" step="1" value="0"></div>
+      </div>
+    </details>
+
+    <div class="row"><label class="btn" for="previewImgFile">Choose preview image</label><input type="file" id="previewImgFile" accept="image/*"><button class="btn primary" id="playPreviewBtn" disabled>Play shake</button></div>
+    <div style="margin-top:12px;max-width:420px;"><canvas class="stage-canvas" id="previewCanvas" width="640" height="360"></canvas></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step-mark">3</span>Detect the flash in video 1</h2>
+    <p class="hint">Upload the compressed, pattern-visible timestamp video. It scans at the selected rate and re-triggers on each pattern appearance, with a short 0.05s default duplicate guard.</p>
+    <div class="scan-warning"><strong>⚠️ Scanning can sometimes appear to freeze.</strong><br>If it takes more than about 1 minute, refresh the page and try again. It may take longer on low-end devices.</div>
+    <div class="row"><label class="btn" for="video1File">Choose video 1 (timestamp video)</label><input type="file" id="video1File" accept="video/*"><span class="file-chosen" id="video1Name"></span></div>
+    <div class="grid3">
+      <div class="field"><label>Center confidence <span class="val" id="centerThreshVal">50%</span></label><input type="range" id="centerThreshInput" min="50" max="99" step="1" value="50"></div>
+      <div class="field"><label>Full-frame confidence <span class="val" id="fullThreshVal">50%</span></label><input type="range" id="fullThreshInput" min="50" max="99" step="1" value="50"></div>
+      <div class="field"><label>Center crop size <span class="val" id="scanRatioVal">30%</span></label><input type="range" id="scanRatioInput" min="10" max="60" step="5" value="30"></div>
+    </div>
+    <div class="row"><button class="btn primary" id="scanBtn" disabled>Scan for flashes</button><button class="btn ghost" id="cancelScanBtn" style="display:none;">Cancel</button></div>
+    <div class="progress" id="scanProgressWrap" style="display:none;"><div id="scanProgressBar"></div></div>
+    <div class="status-line" id="scanStatus"></div>
+    <div id="triggerTableWrap" style="display:none;"><table class="trig"><thead><tr><th>Time</th><th>Center match</th><th>Full match</th><th>Source</th><th></th></tr></thead><tbody id="triggerRows"></tbody></table></div>
+    <div class="empty-note" id="triggerEmpty">No flashes detected yet.</div>
+    <div class="row"><input type="number" id="manualTimeInput" step="0.01" placeholder="seconds" style="width:110px;background:var(--panel-2);border:1px solid var(--line);color:var(--text);padding:8px 10px;border-radius:6px;"><button class="btn ghost" id="addManualBtn">Add manual trigger</button></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step-mark">4</span>Preview and export on video 2</h2>
+    <p class="hint">Upload the full-quality original — same timeline as video 1. Preview is lightweight; export renders a real 60 FPS MP4 at the video's aspect ratio (including square 1:1) instead of recording the browser canvas.</p>
+    <div class="row"><label class="btn" for="video2File">Choose video 2 (original)</label><input type="file" id="video2File" accept="video/*"><span class="file-chosen" id="video2Name"></span></div>
+    <div style="margin-top:12px;"><canvas class="stage-canvas" id="renderCanvas" width="960" height="540"></canvas></div>
+    <div class="row"><button class="btn primary" id="playVideo2Btn" disabled>Play preview</button><button class="btn" id="pauseVideo2Btn" disabled>Pause</button><button class="btn" id="exportBtn" disabled>Export 60fps (.mp4)</button></div>
+    <div class="status-line" id="exportStatus"></div>
+    <div class="row" id="downloadRow" style="display:none;"><a class="btn primary" id="downloadLink" download="shakyyyy-60fps.mp4">Download 60fps MP4</a></div>
+    <div class="row"><button class="btn" id="downloadManifestBtn">Download shake manifest (.json)</button><button class="btn ghost" id="copyManifestBtn">Copy manifest</button></div>
+  </div>
+
+  <footer class="note">The manifest holds every trigger time plus the exact shake parameters, including the graph, jitter method, and advanced motion settings. Detection assumes the flash sits centered and fills the frame.</footer>
+</div>
+
+<script>
+(function(){
+  const bar=document.getElementById('errorBar');
+  function show(kind,message,source,line,col,stack){
+    const text=String(message||'Unknown JavaScript error');
+    const loc=source?(source+(line?':'+line:'')+(col?':'+col:'')) : '';
+    bar.className='show';
+    bar.innerHTML='⛔ '+kind+': '+text+(loc?'\n<small>'+loc+'</small>':'')+(stack?'\n<small>'+String(stack).slice(0,1800)+'</small>':'');
+    console.error(kind,message,source,line,col,stack);
+  }
+  window.addEventListener('error',function(e){
+    show('JavaScript error',e.message,e.filename,e.lineno,e.colno,e.error&&e.error.stack);
+  });
+  window.addEventListener('unhandledrejection',function(e){
+    const r=e.reason; show('Unhandled promise rejection',r&&r.message?r.message:String(r),'',0,0,r&&r.stack);
+  });
+  window.__showShakyyyyError=show;
+})();
+</script>
+<script type="module">
+  import * as Mediabunny from "https://cdn.jsdelivr.net/npm/mediabunny@1.55.1/dist/bundles/mediabunny.min.mjs";
+  window.Mediabunny = Mediabunny;
+  window.dispatchEvent(new Event("mediabunnyready"));
+</script>
+<script>
+(function(){
+  function $(id){return document.getElementById(id);}
+  function clamp(v,a,b){return Math.min(Math.max(v,a),b);}
+  function downloadJSON(obj,filename){const blob=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);}
+  function copyText(str,onOk,onFail){if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(str).then(onOk,onFail);else{const ta=document.createElement('textarea');ta.value=str;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');onOk();}catch(e){onFail();}document.body.removeChild(ta);}}
+  function fmtTime(t){const m=Math.floor(t/60),s=(t-m*60).toFixed(2);return m>0?m+':'+s.padStart(5,'0'):t.toFixed(2)+'s';}
+
+  function envelopeValue(progress,elapsed,p){
+    const q=clamp(progress,0,1), freq=Math.min(25,Math.max(.01,p.freq));
+    switch(p.graph){
+      case 'exponential': return Math.exp(-p.envExp*q);
+      case 'easeOut': return Math.pow(1-q,p.easePower);
+      case 'easeIn': return 1-Math.pow(q,p.easePower);
+      case 'easeInOut': return .5*(1+Math.cos(Math.PI*q));
+      case 'pulse': return clamp(Math.abs(Math.cos(2*Math.PI*freq*elapsed))* (1-q),0,1);
+      case 'bounce': return clamp(Math.abs(Math.sin(Math.PI*p.bounceCount*(1-q)))*(1-q),0,1);
+      case 'sine': return clamp(Math.sin(Math.PI*(1-q)/2),0,1);
+      case 'spring': return clamp((1-q)*(0.5+0.5*Math.cos(2*Math.PI*freq*elapsed))*2,0,1);
+      case 'custom':{
+        const wave=.5+.5*Math.cos(2*Math.PI*freq*elapsed+p.customPhase*2*Math.PI);
+        return clamp((1-p.customMix)*(1-q)+p.customMix*wave*(1-q),0,1);
+      }
+      default:return 1-q;
+    }
+  }
+
+  function computeOrbit(elapsed,p){
+    const progress=clamp(elapsed/p.duration,0,1);
+    const env=envelopeValue(progress,elapsed,p);
+    const maxRadius=p.magnitude*4*p.radiusMultiplier;
+    const radius=maxRadius*env;
+    const angle=p.rotationDirection*(2*Math.PI*p.laps*progress)+(p.phaseDeg*Math.PI/180);
+    return{x:radius*Math.cos(angle),y:radius*Math.sin(angle)};
+  }
+
+  function scatterHash(n,seed){const s=Math.sin(n*12.9898+seed*78.233)*43758.5453;return s-Math.floor(s);}
+  function scatterPoint(step,p){
+    const r1=scatterHash(step*2,p.scatterSeed),r2=scatterHash(step*2+1,p.scatterSeed);
+    const angle=r1*2*Math.PI,mag=r2*p.scatterAmount;
+    return{x:mag*Math.cos(angle),y:mag*Math.sin(angle)};
+  }
+  function computeScatter(elapsed,p){
+    // Always evaluate the scatter clock, even at 0 px.
+    // During the final scatter interval, hold the last scatter point and
+    // smoothly blend it back to exactly 0,0 so the shake ends seamlessly.
+    const interval=p.scatterInterval>0?p.scatterInterval:.1;
+    const duration=Math.max(0,p.duration||0);
+    const fadeStart=Math.max(0,duration-interval);
+
+    if(duration>0 && elapsed>=fadeStart){
+      const fadeProgress=clamp((elapsed-fadeStart)/Math.max(.0001,duration-fadeStart),0,1);
+      const lastStep=Math.floor(fadeStart/interval);
+      const last=scatterPoint(lastStep,p);
+      const e=fadeProgress*fadeProgress*(3-2*fadeProgress);
+      return{x:last.x*(1-e),y:last.y*(1-e)};
+    }
+
+    const step=Math.floor(Math.max(0,elapsed)/interval);
+    if(p.scatterMode==='smooth'){
+      const a=scatterPoint(step,p),b=scatterPoint(step+1,p),f=(elapsed-step*interval)/interval;
+      const e=f*f*(3-2*f);
+      return{x:a.x+(b.x-a.x)*e,y:a.y+(b.y-a.y)*e};
+    }
+    return scatterPoint(step,p);
+  }
+  function computeShake(elapsed,p){
+    const orb=computeOrbit(elapsed,p),sc=computeScatter(elapsed,p);
+    return{offsetX:orb.x+sc.x+wCenterX(p),offsetY:orb.y+sc.y+wCenterY(p)};
+  }
+  function wCenterX(p){return (p.centerXPercent/100)*p.renderWidth;}
+  function wCenterY(p){return (p.centerYPercent/100)*p.renderHeight;}
+
+  function buildMirrorMosaic(source,w,h,R){
+    const tiles=2*R+1,big=document.createElement('canvas');big.width=w*tiles;big.height=h*tiles;const bctx=big.getContext('2d');
+    for(let ty=-R;ty<=R;ty++)for(let tx=-R;tx<=R;tx++){bctx.save();bctx.translate((tx+R)*w+w/2,(ty+R)*h+h/2);bctx.scale(Math.abs(tx)%2===1?-1:1,Math.abs(ty)%2===1?-1:1);try{bctx.drawImage(source,-w/2,-h/2,w,h);}catch(e){}bctx.restore();}
+    return big;
+  }
+
+  // Cache the mirror mosaic for BOTH images and videos. Rebuilding the mosaic
+  // for every video frame was causing the main thread to get saturated, which
+  // made sliders, file pickers and buttons appear frozen.
+  const imageMosaicCache=new WeakMap();
+  function getMirrorMosaic(source,w,h,R){
+    // Images are static, so they can safely use the WeakMap cache.
+    // Videos AND canvases are NOT static: caching by reference would freeze
+    // the mosaic at whichever frame was rendered first. This matters for the
+    // export path, which draws each new frame onto one reused frameCanvas
+    // and passes that same canvas in as `source` — without this check, the
+    // WeakMap cache locked onto that canvas object and replayed the very
+    // first shake frame it ever saw for every shake for the rest of the
+    // export, instead of the current frame. A video/canvas frame is instead
+    // mosaiced fresh once per render.
+    if(source instanceof HTMLVideoElement || source instanceof HTMLCanvasElement){
+      return buildMirrorMosaic(source,w,h,R);
+    }
+    if(source && (typeof source==='object'||typeof source==='function')){
+      const c=imageMosaicCache.get(source);
+      if(c&&c.w===w&&c.h===h&&c.R===R)return c.mosaic;
+      const mosaic=buildMirrorMosaic(source,w,h,R);
+      imageMosaicCache.set(source,{w,h,R,mosaic});
+      return mosaic;
+    }
+    return buildMirrorMosaic(source,w,h,R);
+  }
+
+  function renderShakeToCanvas(ctx,source,w,h,elapsed,p){
+    p.renderWidth=w;p.renderHeight=h;
+    if(elapsed<0){ctx.clearRect(0,0,w,h);try{ctx.drawImage(source,0,0,w,h);}catch(e){}return;}
+    const R=Math.max(1,Math.round(p.mirrorRadius||1)),tiles=2*R+1;
+    const mosaic=getMirrorMosaic(source,w,h,R);
+    const drawAt=(o,alpha)=>{
+      ctx.globalAlpha=alpha;
+      ctx.save();
+      ctx.translate(w/2+o.offsetX,h/2+o.offsetY);
+      ctx.drawImage(mosaic,-(R+.5)*w,-(R+.5)*h,tiles*w,tiles*h);
+      ctx.restore();
+    };
+    ctx.clearRect(0,0,w,h);
+    const current=computeShake(elapsed,p);
+    drawAt(current,1);
+    ctx.globalAlpha=1;
+  }
+
+  function readShakeParams(){
+    return{
+      duration:parseFloat($('durInput').value),freq:parseFloat($('freqInput').value),laps:parseFloat($('rotInput').value),
+      magnitude:parseFloat($('zoomInput').value),scatterAmount:parseFloat($('scatterInput').value),
+      graph:$('graphInput').value,envExp:parseFloat($('advEnvExpInput').value),easePower:parseFloat($('advEasePowerInput').value),
+      bounceCount:parseFloat($('advBounceCountInput').value),phaseDeg:parseFloat($('advPhaseInput').value),
+      scatterInterval:parseFloat($('advScatterIntervalInput').value),scatterSeed:parseFloat($('advScatterSeedInput').value),
+      mirrorRadius:parseFloat($('advMirrorRadiusInput').value),cooldown:Math.max(.05,parseFloat($('advCooldownInput').value)),
+      scanFps:parseFloat($('advScanFpsInput').value),customFreq:Math.min(25,parseFloat($('advCustomFreqInput').value)),
+      customPhase:parseFloat($('advCustomPhaseInput').value),customMix:parseFloat($('advCustomMixInput').value),
+      radiusMultiplier:parseFloat($('advRadiusMultiplierInput').value),rotationDirection:parseFloat($('rotationDirectionInput').value),
+      scatterMode:$('advScatterModeInput').value,triggerMode:$('advTriggerModeInput').value,
+      centerXPercent:parseFloat($('advCenterXInput').value),centerYPercent:parseFloat($('advCenterYInput').value)
+    };
+  }
+
+  function bindRange(i,v,f){const el=$(i);el.addEventListener('input',()=>$(v).textContent=f(el.value));}
+  bindRange('durInput','durVal',v=>parseFloat(v).toFixed(2)+'s');bindRange('freqInput','freqVal',v=>parseFloat(v).toFixed(1)+' Hz');
+  bindRange('rotInput','rotVal',v=>parseFloat(v).toFixed(1)+' laps');bindRange('zoomInput','zoomVal',v=>Math.round(v)+'%');
+  bindRange('scatterInput','scatterVal',v=>Math.round(v)+' px');
+  bindRange('centerThreshInput','centerThreshVal',v=>Math.round(v)+'%');bindRange('fullThreshInput','fullThreshVal',v=>Math.round(v)+'%');bindRange('scanRatioInput','scanRatioVal',v=>Math.round(v)+'%');
+  bindRange('advCustomMixInput','advCustomMixVal',v=>parseFloat(v).toFixed(2));
+  // Keep displayed values live without relying on the renderer.
+  document.querySelectorAll('input[type=range]').forEach(el=>el.addEventListener('input',()=>{
+    const map={durInput:['durVal',v=>parseFloat(v).toFixed(2)+'s'],freqInput:['freqVal',v=>parseFloat(v).toFixed(1)+' Hz'],rotInput:['rotVal',v=>parseFloat(v).toFixed(1)+' laps'],zoomInput:['zoomVal',v=>Math.round(v)+'%'],scatterInput:['scatterVal',v=>Math.round(v)+' px'],centerThreshInput:['centerThreshVal',v=>Math.round(v)+'%'],fullThreshInput:['fullThreshVal',v=>Math.round(v)+'%'],scanRatioInput:['scanRatioVal',v=>Math.round(v)+'%'],advCustomMixInput:['advCustomMixVal',v=>parseFloat(v).toFixed(2)]};
+    const m=map[el.id]; if(m) $(m[0]).textContent=m[1](el.value);
+  }));
+
+  let pattern=null;
+  function setStatus(id,msg,cls){const el=$(id);el.textContent=msg||'';el.className='status-line'+(cls?' '+cls:'');}
+  function renderPatternSummary(){ $('patternSummary').style.display='flex';const sw=$('patternSwatch'),sctx=sw.getContext('2d'),avg=pattern.full.averageRGB||[40,40,40];sctx.fillStyle='rgb('+avg[0]+','+avg[1]+','+avg[2]+')';sctx.fillRect(0,0,44,44);$('patternMetaText').innerHTML='<b>full:</b> '+pattern.full.width+'×'+pattern.full.height+' samples &nbsp; <b>center:</b> '+pattern.center.width+'×'+pattern.center.height+' samples<br>'+(pattern.meta?'<b>source:</b> '+pattern.meta.sourceWidth+'×'+pattern.meta.sourceHeight:'');}
+  function usePattern(parsed){if(!parsed||!parsed.full||!parsed.center||!Array.isArray(parsed.full.pixels)||!Array.isArray(parsed.center.pixels)){setStatus('patternStatus',"That doesn't have the expected full/center pixel data.",'warn');return;}pattern=parsed;if(pattern.meta&&pattern.meta.centerRatio){$('scanRatioInput').value=Math.round(pattern.meta.centerRatio*100);$('scanRatioVal').textContent=Math.round(pattern.meta.centerRatio*100)+'%';}renderPatternSummary();setStatus('patternStatus','Pattern loaded.','ok');$('scanBtn').disabled=!video1Ready;}
+
+  $('patternFile').addEventListener('change',function(){const f=this.files&&this.files[0];if(!f)return;$('patternFileName').textContent=f.name;const r=new FileReader();r.onload=()=>{$('patternPaste').value=r.result;};r.readAsText(f);});
+  $('loadPatternBtn').addEventListener('click',function(){const raw=$('patternPaste').value.trim();if(!raw){setStatus('patternStatus','Paste or upload pattern JSON first.','warn');return;}try{usePattern(JSON.parse(raw));}catch(e){setStatus('patternStatus',"That doesn't look like valid JSON.",'warn');}});
+
+  let pImg=null,pNaturalW=0,pNaturalH=0,pSelection=null,pDragging=false,pDragStart=null;
+  function sizePatternCanvas(){const cvs=$('patternViewCanvas'),maxW=Math.min(640,(cvs.parentElement&&cvs.parentElement.clientWidth)||640),maxH=480,scale=Math.min(maxW/pNaturalW,maxH/pNaturalH,1);cvs.width=Math.max(1,Math.round(pNaturalW*scale));cvs.height=Math.max(1,Math.round(pNaturalH*scale));}
+  function getPatternCenterRect(sel){const ratio=parseInt($('pCenterRatio').value,10)/100,cw=Math.max(sel.w*ratio,2),ch=Math.max(sel.h*ratio,2);return{x:sel.x+(sel.w-cw)/2,y:sel.y+(sel.h-ch)/2,w:cw,h:ch};}
+  function drawPatternCanvas(){if(!pImg)return;const cvs=$('patternViewCanvas'),ctx=cvs.getContext('2d');ctx.clearRect(0,0,cvs.width,cvs.height);ctx.drawImage(pImg,0,0,cvs.width,cvs.height);if(pSelection){ctx.lineWidth=2;ctx.strokeStyle='#ff4d6d';ctx.strokeRect(pSelection.x+1,pSelection.y+1,Math.max(pSelection.w-2,0),Math.max(pSelection.h-2,0));const c=getPatternCenterRect(pSelection);ctx.setLineDash([5,4]);ctx.lineWidth=1.5;ctx.strokeStyle='#4cc9f0';ctx.strokeRect(c.x,c.y,c.w,c.h);ctx.setLineDash([]);}}
+  $('patternImageFile').addEventListener('change',function(){const f=this.files&&this.files[0];if(!f)return;const url=URL.createObjectURL(f),im=new Image();im.onload=()=>{pImg=im;pNaturalW=im.naturalWidth;pNaturalH=im.naturalHeight;sizePatternCanvas();const cvs=$('patternViewCanvas');pSelection={x:0,y:0,w:cvs.width,h:cvs.height};$('patternCropWrap').style.display='block';drawPatternCanvas();setStatus('patternStatus','Image loaded — drag on it to mark the pattern, then extract.');URL.revokeObjectURL(url);};im.onerror=()=>setStatus('patternStatus',"Couldn't read that image.",'warn');im.src=url;});
+  function pCanvasPoint(e){const cvs=$('patternViewCanvas'),rect=cvs.getBoundingClientRect(),sx=cvs.width/rect.width,sy=cvs.height/rect.height,cx=e.touches?e.touches[0].clientX:e.clientX,cy=e.touches?e.touches[0].clientY:e.clientY;return{x:clamp((cx-rect.left)*sx,0,cvs.width),y:clamp((cy-rect.top)*sy,0,cvs.height)};}
+  $('patternViewCanvas').addEventListener('pointerdown',function(e){if(!pImg)return;pDragging=true;pDragStart=pCanvasPoint(e);this.setPointerCapture(e.pointerId);});
+  $('patternViewCanvas').addEventListener('pointermove',function(e){if(!pDragging)return;const p=pCanvasPoint(e);pSelection={x:Math.min(pDragStart.x,p.x),y:Math.min(pDragStart.y,p.y),w:Math.abs(p.x-pDragStart.x),h:Math.abs(p.y-pDragStart.y)};drawPatternCanvas();});
+  function endPDrag(){if(!pDragging)return;pDragging=false;if(pSelection&&(pSelection.w<6||pSelection.h<6)){const cvs=$('patternViewCanvas');pSelection={x:0,y:0,w:cvs.width,h:cvs.height};}drawPatternCanvas();}
+  $('patternViewCanvas').addEventListener('pointerup',endPDrag);$('patternViewCanvas').addEventListener('pointercancel',endPDrag);
+  $('pCenterRatio').addEventListener('input',function(){$('pCenterRatioVal').textContent=this.value+'%';drawPatternCanvas();});$('pFullRes').addEventListener('input',function(){$('pFullResVal').textContent=this.value;});$('pCenterRes').addEventListener('input',function(){$('pCenterResVal').textContent=this.value;});
+  $('pWholeBtn').addEventListener('click',function(){if(!pImg)return;const cvs=$('patternViewCanvas');pSelection={x:0,y:0,w:cvs.width,h:cvs.height};drawPatternCanvas();});
+  window.addEventListener('resize',function(){if(!pImg)return;const cvs=$('patternViewCanvas'),oldW=cvs.width,oldH=cvs.height;sizePatternCanvas();if(pSelection&&oldW&&oldH){const sx=cvs.width/oldW,sy=cvs.height/oldH;pSelection={x:pSelection.x*sx,y:pSelection.y*sy,w:pSelection.w*sx,h:pSelection.h*sy};}drawPatternCanvas();});
+  function samplePatch(naturalRect,targetLong){const aspect=naturalRect.w/naturalRect.h;let outW,outH;if(aspect>=1){outW=Math.max(1,Math.round(targetLong));outH=Math.max(1,Math.round(targetLong/aspect));}else{outH=Math.max(1,Math.round(targetLong));outW=Math.max(1,Math.round(targetLong*aspect));}const off=document.createElement('canvas');off.width=outW;off.height=outH;const octx=off.getContext('2d');octx.imageSmoothingEnabled=true;octx.imageSmoothingQuality='high';octx.drawImage(pImg,naturalRect.x,naturalRect.y,naturalRect.w,naturalRect.h,0,0,outW,outH);const data=octx.getImageData(0,0,outW,outH).data,pixels=[];let rs=0,gs=0,bs=0;for(let i=0;i<data.length;i+=4){pixels.push([data[i],data[i+1],data[i+2]]);rs+=data[i];gs+=data[i+1];bs+=data[i+2];}const n=pixels.length||1;return{width:outW,height:outH,pixels,averageRGB:[Math.round(rs/n),Math.round(gs/n),Math.round(bs/n)]};}
+  $('extractPatternBtn').addEventListener('click',function(){if(!pImg||!pSelection){setStatus('patternStatus','Upload a pattern image first.','warn');return;}const cvs=$('patternViewCanvas'),s=pNaturalW/cvs.width,selNatural={x:pSelection.x*s,y:pSelection.y*s,w:Math.max(pSelection.w*s,1),h:Math.max(pSelection.h*s,1)},centerDisplay=getPatternCenterRect(pSelection),centerNatural={x:centerDisplay.x*s,y:centerDisplay.y*s,w:Math.max(centerDisplay.w*s,1),h:Math.max(centerDisplay.h*s,1)},full=samplePatch(selNatural,parseInt($('pFullRes').value,10)||32),center=samplePatch(centerNatural,parseInt($('pCenterRes').value,10)||8),built={meta:{sourceWidth:pNaturalW,sourceHeight:pNaturalH,selection:{x:Math.round(selNatural.x),y:Math.round(selNatural.y),w:Math.round(selNatural.w),h:Math.round(selNatural.h)},centerRatio:parseInt($('pCenterRatio').value,10)/100,generatedAt:new Date().toISOString()},center,full};$('patternPaste').value=JSON.stringify(built,null,2);usePattern(built);});
+
+  let previewImg=null,previewRAF=null,previewStartTime=null;
+  $('previewImgFile').addEventListener('change',function(){const f=this.files&&this.files[0];if(!f)return;const url=URL.createObjectURL(f),im=new Image();im.onload=()=>{previewImg=im;const cvs=$('previewCanvas'),scale=Math.min(640/im.naturalWidth,1);cvs.width=Math.round(im.naturalWidth*scale);cvs.height=Math.round(im.naturalHeight*scale);cvs.getContext('2d').drawImage(im,0,0,cvs.width,cvs.height);$('playPreviewBtn').disabled=false;URL.revokeObjectURL(url);};im.src=url;});
+  $('playPreviewBtn').addEventListener('click',function(){if(!previewImg)return;if(previewRAF)cancelAnimationFrame(previewRAF);previewStartTime=null;const cvs=$('previewCanvas'),ctx=cvs.getContext('2d'),params=readShakeParams();function step(ts){if(previewStartTime===null)previewStartTime=ts;const elapsed=(ts-previewStartTime)/1000;if(elapsed>=params.duration){renderShakeToCanvas(ctx,previewImg,cvs.width,cvs.height,params.duration,params);ctx.clearRect(0,0,cvs.width,cvs.height);ctx.drawImage(previewImg,0,0,cvs.width,cvs.height);previewRAF=null;return;}renderShakeToCanvas(ctx,previewImg,cvs.width,cvs.height,Math.min(elapsed,params.duration),params);previewRAF=requestAnimationFrame(step);}renderShakeToCanvas(ctx,previewImg,cvs.width,cvs.height,0,params);previewRAF=requestAnimationFrame(step);});
+
+  const video1=document.createElement('video');video1.muted=true;video1.playsInline=true;let video1Ready=false,scanCancelled=false,triggers=[];
+  $('video1File').addEventListener('change',function(){const f=this.files&&this.files[0];if(!f)return;$('video1Name').textContent=f.name;const url=URL.createObjectURL(f);video1Ready=false;video1.src=url;video1.addEventListener('loadedmetadata',function onMeta(){video1.removeEventListener('loadedmetadata',onMeta);video1Ready=true;$('scanBtn').disabled=!pattern;setStatus('scanStatus','Video 1 loaded — '+video1.videoWidth+'×'+video1.videoHeight+', '+video1.duration.toFixed(2)+'s.','ok');},{once:true});});
+  function seekTo(video,t){return new Promise(resolve=>{function onSeeked(){video.removeEventListener('seeked',onSeeked);resolve();}video.addEventListener('seeked',onSeeked);video.currentTime=Math.min(Math.max(t,0),Math.max(video.duration-.001,0));});}
+  function similarity(imageData,patternPixels){
+    // Mean colour distance, converted to a percentage. This is deliberately
+    // tolerant of normal video compression instead of requiring byte-for-byte
+    // equality with the JSON sample.
+    let sum=0,n=Math.min(patternPixels.length,Math.floor(imageData.length/4));
+    for(let i=0;i<n;i++){
+      const r=imageData[i*4],g=imageData[i*4+1],b=imageData[i*4+2];
+      const [pr,pg,pb]=patternPixels[i];
+      const dr=r-pr,dg=g-pg,db=b-pb;
+      sum+=dr*dr+dg*dg+db*db;
+    }
+    if(!n)return 0;
+    const rms=Math.sqrt(sum/n);
+    return clamp(100*(1-rms/(255*Math.sqrt(3))),0,100);
+  }
+  $('scanBtn').addEventListener('click',async function(){
+    if(!pattern||!video1Ready)return;
+    scanCancelled=false;triggers=[];renderTriggerTable();
+    $('scanBtn').disabled=true;$('cancelScanBtn').style.display='inline-block';
+    $('scanProgressWrap').style.display='block';$('scanProgressBar').style.width='0%';
+    const centerThreshold=parseFloat($('centerThreshInput').value),fullThreshold=parseFloat($('fullThreshInput').value),ratio=parseFloat($('scanRatioInput').value)/100,shakeParams=readShakeParams(),stepSec=1/(shakeParams.scanFps||60),total=video1.duration;
+    const offCenter=document.createElement('canvas'),offFull=document.createElement('canvas');
+    offFull.width=pattern.full.width;offFull.height=pattern.full.height;
+    offCenter.width=pattern.center.width;offCenter.height=pattern.center.height;
+    const cctx=offCenter.getContext('2d'),fctx=offFull.getContext('2d');
+    fctx.imageSmoothingEnabled=true;cctx.imageSmoothingEnabled=true;
+    let eventArmed=true,unmatchedFrames=3,lastSampleTime=-Infinity;
+
+    // Do not repeatedly seek Video 1. Repeated currentTime seeks can cause some
+    // browsers/devices to jump back to the beginning or stall while decoding.
+    // Instead, play once and sample decoded frames at the requested scan rate.
+    // The frame is still resized EXACTLY to the JSON full-pattern dimensions.
+    try{
+      video1.pause();
+      await seekTo(video1,0);
+      if(video1.readyState<2)await new Promise(resolve=>{const fn=()=>{video1.removeEventListener('canplay',fn);resolve();};video1.addEventListener('canplay',fn,{once:true});});
+      setStatus('scanStatus','Scanning… 0%');
+      await video1.play();
+
+      await new Promise(resolve=>{
+        let lastTime=-Infinity;
+        const processFrame=(mediaTime)=>{
+          if(scanCancelled){resolve();return;}
+          const t=Number.isFinite(mediaTime)?mediaTime:video1.currentTime;
+          if(t-lastTime+1e-7<stepSec)return;
+          lastTime=t;
+          const vw=video1.videoWidth,vh=video1.videoHeight;
+          if(vw&&vh){
+            fctx.clearRect(0,0,offFull.width,offFull.height);
+            fctx.drawImage(video1,0,0,vw,vh,0,0,offFull.width,offFull.height);
+            const centerW=Math.max(1,Math.round(offFull.width*ratio)),centerH=Math.max(1,Math.round(offFull.height*ratio));
+            const centerX=Math.max(0,(offFull.width-centerW)/2),centerY=Math.max(0,(offFull.height-centerH)/2);
+            cctx.clearRect(0,0,offCenter.width,offCenter.height);
+            cctx.drawImage(offFull,centerX,centerY,centerW,centerH,0,0,offCenter.width,offCenter.height);
+            const centerSim=similarity(cctx.getImageData(0,0,offCenter.width,offCenter.height).data,pattern.center.pixels);
+            let matched=false,fullSim=0;
+            if(centerSim>=centerThreshold){
+              fullSim=similarity(fctx.getImageData(0,0,offFull.width,offFull.height).data,pattern.full.pixels);
+              matched=fullSim>=fullThreshold;
+            }
+            if(matched){
+              unmatchedFrames=0;
+              if(eventArmed){
+                triggers.push({t,centerSim,fullSim,source:'auto'});
+                eventArmed=false;
+                renderTriggerTable();
+              }
+            }else{
+              unmatchedFrames++;
+              if(unmatchedFrames>=2)eventArmed=true;
+            }
+          }
+          $('scanProgressBar').style.width=Math.round(100*clamp(t/Math.max(total,.001),0,1))+'%';
+          $('scanStatus').textContent='Scanning… '+Math.round(100*clamp(t/Math.max(total,.001),0,1))+'%';
+        };
+
+        let settled=false,rafId=null,rvfcId=null;
+        const finish=()=>{
+          if(settled)return;
+          settled=true;
+          if(rafId!==null)cancelAnimationFrame(rafId);
+          if(rvfcId!==null&&video1.cancelVideoFrameCallback)video1.cancelVideoFrameCallback(rvfcId);
+          video1.pause();
+          resolve();
+        };
+        video1.addEventListener('ended',finish,{once:true});
+        const useRVFC='requestVideoFrameCallback' in HTMLVideoElement.prototype;
+        const tick=(now,meta)=>{
+          if(settled)return;
+          if(scanCancelled){finish();return;}
+          const before=video1.currentTime;
+          processFrame(useRVFC&&meta?meta.mediaTime:before);
+          if(video1.ended||video1.currentTime>=total-0.001){finish();return;}
+          if(useRVFC)rvfcId=video1.requestVideoFrameCallback(tick);
+          else rafId=requestAnimationFrame((ts)=>tick(ts,null));
+        };
+        if(useRVFC)rvfcId=video1.requestVideoFrameCallback(tick);else rafId=requestAnimationFrame((ts)=>tick(ts,null));
+      });
+    }catch(e){
+      if(window.__showShakyyyyError)window.__showShakyyyyError('Scan error',e&&e.message?e.message:String(e),'',0,0,e&&e.stack);
+      setStatus('scanStatus','Scan failed — see the red error bar above.','warn');
+    }finally{
+      video1.pause();
+      // IMPORTANT: do NOT seek back to 0 after scanning. That made the timestamp
+      // video visibly jump/loop back to its beginning when the scan finished.
+      $('scanProgressBar').style.width='100%';
+      $('scanBtn').disabled=false;$('cancelScanBtn').style.display='none';
+      if(!scanCancelled&&$('scanStatus').textContent.startsWith('Scanning'))setStatus('scanStatus',triggers.length?'Done — '+triggers.length+' flash'+(triggers.length===1?'':'es')+' found.':'Done — no flashes matched at this threshold.',triggers.length?'ok':'warn');
+    }
+  });
+  $('cancelScanBtn').addEventListener('click',()=>{scanCancelled=true;});
+  $('addManualBtn').addEventListener('click',function(){const v=parseFloat($('manualTimeInput').value);if(isNaN(v)||v<0)return;triggers.push({t:v,centerSim:null,fullSim:null,source:'manual'});triggers.sort((a,b)=>a.t-b.t);renderTriggerTable();$('manualTimeInput').value='';});
+  function renderTriggerTable(){triggers.sort((a,b)=>a.t-b.t);const rows=$('triggerRows');rows.innerHTML='';$('triggerTableWrap').style.display=triggers.length?'block':'none';$('triggerEmpty').style.display=triggers.length?'none':'block';triggers.forEach((trig,idx)=>{const tr=document.createElement('tr');tr.innerHTML='<td>'+fmtTime(trig.t)+'</td><td>'+(trig.centerSim!=null?trig.centerSim.toFixed(1)+'%':'—')+'</td><td>'+(trig.fullSim!=null?trig.fullSim.toFixed(1)+'%':'—')+'</td><td>'+trig.source+'</td><td><button data-idx="'+idx+'">✕</button></td>';rows.appendChild(tr);});rows.querySelectorAll('button').forEach(btn=>btn.addEventListener('click',function(){triggers.splice(parseInt(this.dataset.idx,10),1);renderTriggerTable();}));}
+
+  const video2=document.createElement('video');video2.playsInline=true;let video2Ready=false,renderRAFId=null;
+  $('video2File').addEventListener('change',function(){const f=this.files&&this.files[0];if(!f)return;$('video2Name').textContent=f.name;const url=URL.createObjectURL(f);video2Ready=false;video2.src=url;video2.addEventListener('loadedmetadata',function onMeta(){video2.removeEventListener('loadedmetadata',onMeta);video2Ready=true;const cvs=$('renderCanvas'),scale=Math.min(960/video2.videoWidth,1);cvs.width=Math.round(video2.videoWidth*scale);cvs.height=Math.round(video2.videoHeight*scale);$('playVideo2Btn').disabled=false;updateExportButton();setStatus('exportStatus','Video 2 loaded — '+video2.videoWidth+'×'+video2.videoHeight+', '+video2.duration.toFixed(2)+'s.','ok');},{once:true});});
+  function activeTrigger(t,duration){for(const trig of triggers){if(t>=trig.t&&t<trig.t+duration)return trig;}return null;}
+  function renderLoop(){if(video2.paused||video2.ended){renderRAFId=null;return;}const cvs=$('renderCanvas'),ctx=cvs.getContext('2d'),t=video2.currentTime,params=readShakeParams(),trig=activeTrigger(t,params.duration);if(trig)renderShakeToCanvas(ctx,video2,cvs.width,cvs.height,t-trig.t,params);else{ctx.clearRect(0,0,cvs.width,cvs.height);ctx.drawImage(video2,0,0,cvs.width,cvs.height);}renderRAFId=requestAnimationFrame(renderLoop);}
+  video2.addEventListener('play',()=>{if(!renderRAFId)renderRAFId=requestAnimationFrame(renderLoop);});
+  video2.addEventListener('pause',()=>{if(renderRAFId){cancelAnimationFrame(renderRAFId);renderRAFId=null;}});
+  video2.addEventListener('ended',()=>{if(renderRAFId){cancelAnimationFrame(renderRAFId);renderRAFId=null;}});
+  $('playVideo2Btn').addEventListener('click',()=>{if(video2Ready)video2.play();});$('pauseVideo2Btn').addEventListener('click',()=>video2.pause());video2.addEventListener('play',()=>{$('pauseVideo2Btn').disabled=false;});video2.addEventListener('pause',()=>{$('pauseVideo2Btn').disabled=true;});
+  let video2File=null;
+  function supportsExport(){return !!(window.Mediabunny&&window.Mediabunny.Input&&window.Mediabunny.Output&&window.Mediabunny.Conversion&&window.Mediabunny.Mp4OutputFormat&&window.Mediabunny.BufferTarget);}
+  function updateExportButton(){ $('exportBtn').disabled=!(video2Ready && video2File && supportsExport()); }
+  window.addEventListener('mediabunnyready', updateExportButton);
+  // The module loads asynchronously; keep the button state correct even if the video loads first.
+  const exportReadyPoll=setInterval(()=>{updateExportButton();if(supportsExport())clearInterval(exportReadyPoll);},250);
+  function getExportDimensions(){
+    // Preserve ANY source aspect ratio. 1080-class output:
+    // landscape <= 1920x1080, portrait <= 1080x1920, square = 1080x1080.
+    const sw=Math.max(1,video2.videoWidth),sh=Math.max(1,video2.videoHeight),r=sw/sh;
+    let W,H;
+    if(r>=1){ W=1920; H=Math.max(1,Math.round(W/r)); if(H>1080){H=1080;W=Math.round(H*r);} }
+    else { H=1920; W=Math.max(1,Math.round(H*r)); if(W>1080){W=1080;H=Math.round(W/r);} }
+    W=Math.max(2,Math.round(W/2)*2); H=Math.max(2,Math.round(H/2)*2);
+    return {W,H};
+  }
+  async function export1080p60(){
+    if(!video2Ready||!video2File||!supportsExport())return;
+    const MB=window.Mediabunny,{W,H}=getExportDimensions(),FPS=60,btn=$('exportBtn');
+    btn.disabled=true;$('downloadRow').style.display='none';setStatus('exportStatus',`Preparing ${W}×${H} 60 FPS export…`);
+    try{
+      const input=new MB.Input({source:new MB.BlobSource(video2File),formats:MB.ALL_FORMATS});
+      const output=new MB.Output({format:new MB.Mp4OutputFormat({fastStart:'in-memory'}),target:new MB.BufferTarget()});
+      const frameCanvas=document.createElement('canvas');frameCanvas.width=W;frameCanvas.height=H;
+      const frameCtx=frameCanvas.getContext('2d',{alpha:false}),params=readShakeParams();
+      const conversion=await MB.Conversion.init({input,output,tracks:'primary',video:{width:W,height:H,fit:'contain',frameRate:FPS,codec:'avc',bitrate:20000000,keyFrameInterval:2,hardwareAcceleration:'prefer-hardware',forceTranscode:true,processedWidth:W,processedHeight:H,process:(sample)=>{frameCtx.clearRect(0,0,W,H);sample.draw(frameCtx,0,0,W,H);const trig=activeTrigger(sample.timestamp,params.duration);if(trig)renderShakeToCanvas(frameCtx,frameCanvas,W,H,sample.timestamp-trig.t,params);return frameCanvas;}},audio:{codec:'aac',bitrate:192000}});
+      conversion.onProgress=(progress)=>{$('exportStatus').textContent=`Rendering ${W}×${H} 60fps… `+Math.round(progress*100)+'%';};
+      if(!conversion.isValid)throw new Error(`This browser cannot encode ${W}×${H} H.264 MP4.`);
+      await conversion.execute();
+      const blob=new Blob([output.target.buffer],{type:'video/mp4'}),url=URL.createObjectURL(blob),name=`shakyyyy-${W}x${H}-60fps.mp4`;
+      $('downloadLink').href=url;$('downloadLink').download=name;$('downloadLink').textContent=`Download ${W}×${H} 60 FPS MP4`;$('downloadRow').style.display='flex';
+      setStatus('exportStatus',`Done — ${W}×${H} at 60 FPS MP4 rendered from the original video, preserving its ${W/H===1?'1:1':(W/H>1?'landscape':'portrait')} aspect ratio.`,'ok');
+    }catch(e){console.error(e);setStatus('exportStatus','Export failed: '+(e&&e.message?e.message:'your browser may not support WebCodecs/H.264 export.'),'warn');}
+    finally{btn.disabled=false;}
+  }
+  $('video2File').addEventListener('change',function(){const f=this.files&&this.files[0];video2File=f||null;updateExportButton();});
+  $('exportBtn').addEventListener('click',export1080p60);
+  if(!supportsExport())$('exportBtn').title='Use a modern Chromium browser with WebCodecs for 60 FPS MP4 export.';
+
+  function buildManifest(){return{generatedAt:new Date().toISOString(),patternMeta:pattern?pattern.meta:null,thresholds:{centerConfidence:parseFloat($('centerThreshInput').value),fullConfidence:parseFloat($('fullThreshInput').value),centerRatio:parseFloat($('scanRatioInput').value)/100},shakeParams:readShakeParams(),triggers:triggers.map(t=>({time:t.t,centerSim:t.centerSim,fullSim:t.fullSim,source:t.source}))};}
+  $('downloadManifestBtn').addEventListener('click',()=>downloadJSON(buildManifest(),'shakyyyy-manifest.json'));
+  $('copyManifestBtn').addEventListener('click',function(){copyText(JSON.stringify(buildManifest(),null,2),()=>setStatus('exportStatus','Manifest copied to clipboard.','ok'),()=>setStatus('exportStatus','Copy failed — use the download button instead.','warn'));});
+})();
+</script>
+</body>
+</html>

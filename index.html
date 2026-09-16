@@ -168,6 +168,7 @@
         <div class="field"><label>Trigger mode</label><select id="advTriggerModeInput"><option value="cooldown">0.05s cooldown</option><option value="rising">Rising-edge only</option></select><span class="subnote">Rising-edge mode triggers when the match goes from below to above threshold.</span></div>
         <div class="field"><label>Shake centre X (%)</label><input type="number" id="advCenterXInput" min="-100" max="100" step="1" value="0"></div>
         <div class="field"><label>Shake centre Y (%)</label><input type="number" id="advCenterYInput" min="-100" max="100" step="1" value="0"></div>
+        <div class="field"><label><input type="checkbox" id="advDebugModeInput"> Debug mode</label><span class="subnote">Shows a live per-frame diagnostics readout under Scan and logs verbosely to the browser console.</span></div>
       </div>
     </details>
 
@@ -188,6 +189,7 @@
     <div class="row"><button class="btn primary" id="scanBtn" disabled>Scan for flashes</button><button class="btn ghost" id="cancelScanBtn" style="display:none;">Cancel</button></div>
     <div class="progress" id="scanProgressWrap" style="display:none;"><div id="scanProgressBar"></div></div>
     <div class="status-line" id="scanStatus"></div>
+    <pre id="scanDebug" style="display:none;font-size:11px;line-height:1.5;background:#0008;border-radius:6px;padding:8px 10px;margin-top:6px;white-space:pre-wrap;overflow-x:auto;max-height:220px;overflow-y:auto;"></pre>
     <div id="triggerTableWrap" style="display:none;"><table class="trig"><thead><tr><th>Time</th><th>Center match</th><th>Full match</th><th>Source</th><th></th></tr></thead><tbody id="triggerRows"></tbody></table></div>
     <div class="empty-note" id="triggerEmpty">No flashes detected yet.</div>
     <div class="row"><input type="number" id="manualTimeInput" step="0.01" placeholder="seconds" style="width:110px;background:var(--panel-2);border:1px solid var(--line);color:var(--text);padding:8px 10px;border-radius:6px;"><button class="btn ghost" id="addManualBtn">Add manual trigger</button></div>
@@ -482,7 +484,32 @@
     const cctx=offCenter.getContext('2d',{willReadFrequently:true,alpha:false}),fctx=offFull.getContext('2d',{willReadFrequently:true,alpha:false});
     fctx.imageSmoothingEnabled=true;cctx.imageSmoothingEnabled=true;
     let eventArmed=true,unmatchedFrames=3,lastSampleTime=-Infinity,stalled=false;
-    const STALL_MS=6000; // if no new frame callback arrives for this long, something's stuck
+
+    // --- Debug mode ------------------------------------------------------
+    const debugMode=$('advDebugModeInput').checked,debugPanel=$('scanDebug');
+    debugPanel.style.display=debugMode?'block':'none';
+    debugPanel.textContent='';
+    const scanStartWall=performance.now();
+    let frameCount=0,sumFrameMs=0,maxFrameMs=0,lastFrameMs=0,lastLogWall=0;
+    const dbg=(label,extra)=>{
+      if(!debugMode)return;
+      const line='['+((performance.now()-scanStartWall)/1000).toFixed(2)+'s] '+label+(extra?' '+JSON.stringify(extra):'');
+      console.debug('[shakyyyy]',line);
+      debugPanel.textContent+=line+'\n';
+      debugPanel.scrollTop=debugPanel.scrollHeight;
+    };
+    if(debugMode){
+      dbg('scan start',{
+        video1:{w:video1.videoWidth,h:video1.videoHeight,duration:+total.toFixed(2),readyState:video1.readyState,networkState:video1.networkState},
+        pattern:{full:[offFull.width,offFull.height],center:[offCenter.width,offCenter.height]},
+        stepSec:+stepSec.toFixed(4),
+        useRVFC:'requestVideoFrameCallback' in HTMLVideoElement.prototype,
+        hardwareConcurrency:navigator.hardwareConcurrency||null,
+        deviceMemory:navigator.deviceMemory||null,
+        ua:navigator.userAgent
+      });
+    }
+    // ----------------------------------------------------------------------
 
     // Do not repeatedly seek Video 1. Repeated currentTime seeks can cause some
     // browsers/devices to jump back to the beginning or stall while decoding.
@@ -502,6 +529,7 @@
           const t=Number.isFinite(mediaTime)?mediaTime:video1.currentTime;
           if(t-lastTime+1e-7<stepSec)return;
           lastTime=t;
+          const frameStartWall=debugMode?performance.now():0;
           const vw=video1.videoWidth,vh=video1.videoHeight;
           if(vw&&vh){
             fctx.clearRect(0,0,offFull.width,offFull.height);
@@ -522,6 +550,7 @@
                 triggers.push({t,centerSim,fullSim,source:'auto'});
                 eventArmed=false;
                 renderTriggerTable();
+                dbg('trigger found',{t:+t.toFixed(2),centerSim:+centerSim.toFixed(1),fullSim:+fullSim.toFixed(1)});
               }
             }else{
               unmatchedFrames++;
@@ -530,9 +559,34 @@
           }
           $('scanProgressBar').style.width=Math.round(100*clamp(t/Math.max(total,.001),0,1))+'%';
           $('scanStatus').textContent='Scanning… '+Math.round(100*clamp(t/Math.max(total,.001),0,1))+'%';
+          if(debugMode){
+            frameCount++;
+            const frameMs=performance.now()-frameStartWall;
+            lastFrameMs=frameMs;sumFrameMs+=frameMs;if(frameMs>maxFrameMs)maxFrameMs=frameMs;
+            // Throttle panel/console writes to ~2x/second so debug mode itself doesn't become the bottleneck.
+            const nowWall=performance.now();
+            if(nowWall-lastLogWall>500){
+              lastLogWall=nowWall;
+              dbg('frame',{
+                n:frameCount,t:+t.toFixed(2),pct:Math.round(100*clamp(t/Math.max(total,.001),0,1)),
+                lastMs:+lastFrameMs.toFixed(1),avgMs:+(sumFrameMs/frameCount).toFixed(1),maxMs:+maxFrameMs.toFixed(1),
+                readyState:video1.readyState,buffered:video1.buffered.length?+video1.buffered.end(video1.buffered.length-1).toFixed(2):null
+              });
+            }
+          }
         };
 
         let settled=false,rafId=null,rvfcId=null,watchdogId=null,lastTickAt=performance.now();
+        // Adaptive stall threshold: rather than one fixed timeout that
+        // unfairly kills long/slow scans (e.g. a 25s video on a slow phone
+        // where per-frame time is legitimately higher, vs a 1.7s video that
+        // finishes before any slowdown accumulates), track the actual recent
+        // pace of ticks and only declare a stall once the gap since the last
+        // tick is way outside that pace AND past a generous floor. This was
+        // very likely the real cause of "works on short clips, not long
+        // ones": the old flat 6s timeout could fire on a scan that was still
+        // making progress, just slowly.
+        let emaGapMs=200; // exponential moving average of tick-to-tick gap
         const finish=()=>{
           if(settled)return;
           settled=true;
@@ -546,7 +600,9 @@
         const useRVFC='requestVideoFrameCallback' in HTMLVideoElement.prototype;
         const tick=(now,meta)=>{
           if(settled)return;
-          lastTickAt=performance.now();
+          const nowWall=performance.now(),gap=nowWall-lastTickAt;
+          emaGapMs=emaGapMs*0.85+gap*0.15;
+          lastTickAt=nowWall;
           if(scanCancelled){finish();return;}
           const before=video1.currentTime;
           processFrame(useRVFC&&meta?meta.mediaTime:before);
@@ -554,19 +610,28 @@
           if(useRVFC)rvfcId=video1.requestVideoFrameCallback(tick);
           else rafId=requestAnimationFrame((ts)=>tick(ts,null));
         };
-        // Watchdog: if no frame callback shows up for STALL_MS (buffering
-        // stall, backgrounded tab throttling decode, codec hiccup, etc.),
-        // stop waiting instead of hanging forever with a frozen progress bar.
+        // Watchdog: if no frame callback shows up for way longer than this
+        // scan's own recent pace (buffering stall, backgrounded tab
+        // throttling decode, codec hiccup, etc.), stop waiting instead of
+        // hanging forever with a frozen progress bar. Floor of 20s so a
+        // single genuinely slow frame on a struggling device never counts
+        // as a stall.
         watchdogId=setInterval(()=>{
           if(settled)return;
-          if(performance.now()-lastTickAt>STALL_MS){stalled=true;finish();}
+          const gap=performance.now()-lastTickAt,threshold=Math.max(20000,emaGapMs*10);
+          if(debugMode)dbg('watchdog check',{gapMs:Math.round(gap),thresholdMs:Math.round(threshold),emaGapMs:Math.round(emaGapMs)});
+          if(gap>threshold){stalled=true;finish();}
         },1000);
         if(useRVFC)rvfcId=video1.requestVideoFrameCallback(tick);else rafId=requestAnimationFrame((ts)=>tick(ts,null));
       });
+      if(debugMode){
+        dbg('scan loop ended',{stalled,cancelled:scanCancelled,frameCount,avgMs:frameCount?+(sumFrameMs/frameCount).toFixed(1):0,maxMs:+maxFrameMs.toFixed(1),wallSec:+((performance.now()-scanStartWall)/1000).toFixed(1),triggersFound:triggers.length});
+      }
       if(stalled){
-        setStatus('scanStatus','Scan stalled — Video 1 stopped producing new frames for '+(STALL_MS/1000)+'s partway through (buffering stall, tab backgrounded, or a decode hiccup). Try re-encoding the file, lowering the scan rate, or keeping the tab in the foreground while scanning.','warn');
+        setStatus('scanStatus','Scan stalled — Video 1 stopped producing new frames for well beyond its own normal pace (buffering stall, tab backgrounded, or a decode hiccup). Try re-encoding the file, lowering the scan rate, or keeping the tab in the foreground while scanning. Turn on Debug mode in Advanced options for details.','warn');
       }
     }catch(e){
+      if(debugMode)dbg('scan error',{message:e&&e.message?e.message:String(e)});
       if(window.__showShakyyyyError)window.__showShakyyyyError('Scan error',e&&e.message?e.message:String(e),'',0,0,e&&e.stack);
       setStatus('scanStatus','Scan failed — see the red error bar above.','warn');
     }finally{

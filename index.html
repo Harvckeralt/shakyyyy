@@ -386,7 +386,35 @@
   let pattern=null;
   function setStatus(id,msg,cls){const el=$(id);el.textContent=msg||'';el.className='status-line'+(cls?' '+cls:'');}
   function renderPatternSummary(){ $('patternSummary').style.display='flex';const sw=$('patternSwatch'),sctx=sw.getContext('2d'),avg=pattern.full.averageRGB||[40,40,40];sctx.fillStyle='rgb('+avg[0]+','+avg[1]+','+avg[2]+')';sctx.fillRect(0,0,44,44);$('patternMetaText').innerHTML='<b>full:</b> '+pattern.full.width+'×'+pattern.full.height+' samples &nbsp; <b>center:</b> '+pattern.center.width+'×'+pattern.center.height+' samples<br>'+(pattern.meta?'<b>source:</b> '+pattern.meta.sourceWidth+'×'+pattern.meta.sourceHeight:'');}
-  function usePattern(parsed){if(!parsed||!parsed.full||!parsed.center||!Array.isArray(parsed.full.pixels)||!Array.isArray(parsed.center.pixels)){setStatus('patternStatus',"That doesn't have the expected full/center pixel data.",'warn');return;}pattern=parsed;if(pattern.meta&&pattern.meta.centerRatio){$('scanRatioInput').value=Math.round(pattern.meta.centerRatio*100);$('scanRatioVal').textContent=Math.round(pattern.meta.centerRatio*100)+'%';}renderPatternSummary();setStatus('patternStatus','Pattern loaded.','ok');$('scanBtn').disabled=!video1Ready;}
+  const MAX_SCAN_DIM=32; // scanning always compares at (at most) this resolution, no matter what the pattern JSON was captured at
+  function resizePatternPatch(patch,maxDim){
+    if(!patch||!Array.isArray(patch.pixels)||!patch.width||!patch.height)return patch;
+    if(patch.width<=maxDim&&patch.height<=maxDim)return patch;
+    const aspect=patch.width/patch.height;
+    let outW,outH;
+    if(aspect>=1){outW=maxDim;outH=Math.max(1,Math.round(maxDim/aspect));}
+    else{outH=maxDim;outW=Math.max(1,Math.round(maxDim*aspect));}
+    // Rebuild the stored pixel triples into a real canvas, then let the
+    // canvas do a proper high-quality downscale (matches how patterns are
+    // captured in samplePatch) to the capped size.
+    const src=document.createElement('canvas');src.width=patch.width;src.height=patch.height;
+    const sctx=src.getContext('2d');
+    const imgData=sctx.createImageData(patch.width,patch.height);
+    for(let i=0,p=0;i<patch.pixels.length;i++,p+=4){
+      imgData.data[p]=patch.pixels[i][0];imgData.data[p+1]=patch.pixels[i][1];imgData.data[p+2]=patch.pixels[i][2];imgData.data[p+3]=255;
+    }
+    sctx.putImageData(imgData,0,0);
+    const out=document.createElement('canvas');out.width=outW;out.height=outH;
+    const octx=out.getContext('2d',{willReadFrequently:true});
+    octx.imageSmoothingEnabled=true;octx.imageSmoothingQuality='high';
+    octx.drawImage(src,0,0,outW,outH);
+    const data=octx.getImageData(0,0,outW,outH).data,pixels=[];
+    let rs=0,gs=0,bs=0;
+    for(let i=0;i<data.length;i+=4){pixels.push([data[i],data[i+1],data[i+2]]);rs+=data[i];gs+=data[i+1];bs+=data[i+2];}
+    const n=pixels.length||1;
+    return{width:outW,height:outH,pixels,averageRGB:[Math.round(rs/n),Math.round(gs/n),Math.round(bs/n)]};
+  }
+  function usePattern(parsed){if(!parsed||!parsed.full||!parsed.center||!Array.isArray(parsed.full.pixels)||!Array.isArray(parsed.center.pixels)){setStatus('patternStatus',"That doesn't have the expected full/center pixel data.",'warn');return;}const cappedFull=resizePatternPatch(parsed.full,MAX_SCAN_DIM),cappedCenter=resizePatternPatch(parsed.center,MAX_SCAN_DIM),wasResized=cappedFull!==parsed.full||cappedCenter!==parsed.center;pattern={...parsed,full:cappedFull,center:cappedCenter};if(pattern.meta&&pattern.meta.centerRatio){$('scanRatioInput').value=Math.round(pattern.meta.centerRatio*100);$('scanRatioVal').textContent=Math.round(pattern.meta.centerRatio*100)+'%';}renderPatternSummary();setStatus('patternStatus',wasResized?`Pattern loaded (downscaled to ${MAX_SCAN_DIM}px max for fast scanning).`:'Pattern loaded.','ok');$('scanBtn').disabled=!video1Ready;}
 
   $('patternFile').addEventListener('change',function(){const f=this.files&&this.files[0];if(!f)return;$('patternFileName').textContent=f.name;const r=new FileReader();r.onload=()=>{$('patternPaste').value=r.result;};r.readAsText(f);});
   $('loadPatternBtn').addEventListener('click',function(){const raw=$('patternPaste').value.trim();if(!raw){setStatus('patternStatus','Paste or upload pattern JSON first.','warn');return;}try{usePattern(JSON.parse(raw));}catch(e){setStatus('patternStatus',"That doesn't look like valid JSON.",'warn');}});

@@ -446,7 +446,12 @@
     const offCenter=document.createElement('canvas'),offFull=document.createElement('canvas');
     offFull.width=pattern.full.width;offFull.height=pattern.full.height;
     offCenter.width=pattern.center.width;offCenter.height=pattern.center.height;
-    const cctx=offCenter.getContext('2d'),fctx=offFull.getContext('2d');
+    // willReadFrequently: getImageData() is called on these every sampled
+    // frame. Without this hint, GPU-backed canvases force a synchronous
+    // GPU->CPU flush on every readback, which is dramatically slower on
+    // mobile GPUs and was the real cause of the multi-minute scan times —
+    // not a hang, just an expensive round trip repeated hundreds of times.
+    const cctx=offCenter.getContext('2d',{willReadFrequently:true,alpha:false}),fctx=offFull.getContext('2d',{willReadFrequently:true,alpha:false});
     fctx.imageSmoothingEnabled=true;cctx.imageSmoothingEnabled=true;
     let eventArmed=true,unmatchedFrames=3,lastSampleTime=-Infinity,stalled=false;
     const STALL_MS=6000; // if no new frame callback arrives for this long, something's stuck

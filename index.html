@@ -451,7 +451,35 @@
   document.body.appendChild(video1);
   let video1Ready=false,scanCancelled=false,triggers=[];
   $('video1File').addEventListener('change',function(){const f=this.files&&this.files[0];if(!f)return;$('video1Name').textContent=f.name;const url=URL.createObjectURL(f);video1Ready=false;video1.src=url;video1.addEventListener('loadedmetadata',function onMeta(){video1.removeEventListener('loadedmetadata',onMeta);video1Ready=true;$('scanBtn').disabled=!pattern;setStatus('scanStatus','Video 1 loaded — '+video1.videoWidth+'×'+video1.videoHeight+', '+video1.duration.toFixed(2)+'s.','ok');},{once:true});});
-  function seekTo(video,t){return new Promise(resolve=>{function onSeeked(){video.removeEventListener('seeked',onSeeked);resolve();}video.addEventListener('seeked',onSeeked);video.currentTime=Math.min(Math.max(t,0),Math.max(video.duration-.001,0));});}
+  // Races a promise against a timeout so a browser event that never fires
+  // (canplay, play(), etc.) can never hang the scan forever — it just moves
+  // on and lets the tick watchdog further downstream catch a genuinely dead
+  // video. onTimeout, if given, is called (not thrown) when the timeout wins.
+  function withTimeout(promise,ms,onTimeout){
+    return new Promise((resolve,reject)=>{
+      let done=false;
+      const timer=setTimeout(()=>{if(done)return;done=true;if(onTimeout)onTimeout();resolve(false);},ms);
+      promise.then(()=>{if(done)return;done=true;clearTimeout(timer);resolve(true);},(err)=>{if(done)return;done=true;clearTimeout(timer);reject(err);});
+    });
+  }
+  function seekTo(video,t){
+    return new Promise(resolve=>{
+      const target=Math.min(Math.max(t,0),Math.max(video.duration-.001,0));
+      // If we're already at (or very near) the target, setting currentTime
+      // to the same value often does NOT fire a 'seeked' event at all — this
+      // is a well-known iOS Safari quirk and was causing an infinite hang
+      // here every time (a freshly loaded video's currentTime is already 0,
+      // and seekTo(video1,0) is exactly what runs before every scan).
+      if(Math.abs(video.currentTime-target)<0.05){resolve();return;}
+      let done=false;
+      const finish=()=>{if(done)return;done=true;video.removeEventListener('seeked',onSeeked);clearTimeout(timer);resolve();};
+      const onSeeked=()=>finish();
+      video.addEventListener('seeked',onSeeked);
+      video.currentTime=target;
+      // Safety net either way: never wait forever for a 'seeked' event that might not fire.
+      const timer=setTimeout(finish,3000);
+    });
+  }
   function similarity(imageData,patternPixels){
     // Mean colour distance, converted to a percentage. This is deliberately
     // tolerant of normal video compression instead of requiring byte-for-byte
@@ -517,10 +545,18 @@
     // The frame is still resized EXACTLY to the JSON full-pattern dimensions.
     try{
       video1.pause();
+      dbg('pausing + seeking to 0',{currentTime:+video1.currentTime.toFixed(2),readyState:video1.readyState});
       await seekTo(video1,0);
-      if(video1.readyState<2)await new Promise(resolve=>{const fn=()=>{video1.removeEventListener('canplay',fn);resolve();};video1.addEventListener('canplay',fn,{once:true});});
+      dbg('seek settled',{currentTime:+video1.currentTime.toFixed(2),readyState:video1.readyState});
+      if(video1.readyState<2){
+        dbg('readyState<2, waiting for canplay',{readyState:video1.readyState,networkState:video1.networkState});
+        const ok=await withTimeout(new Promise(resolve=>{const fn=()=>{video1.removeEventListener('canplay',fn);resolve();};video1.addEventListener('canplay',fn,{once:true});}),8000,()=>dbg('canplay never fired — proceeding anyway after 8s'));
+        dbg('canplay wait done',{firedNormally:ok,readyState:video1.readyState});
+      }
       setStatus('scanStatus','Scanning… 0%');
-      await video1.play();
+      dbg('calling video1.play()',{readyState:video1.readyState,networkState:video1.networkState,paused:video1.paused});
+      const playOk=await withTimeout(video1.play(),8000,()=>dbg('play() never settled — proceeding anyway after 8s'));
+      dbg('play() done',{settledNormally:playOk,paused:video1.paused,readyState:video1.readyState,currentTime:+video1.currentTime.toFixed(2)});
 
       await new Promise(resolve=>{
         let lastTime=-Infinity;

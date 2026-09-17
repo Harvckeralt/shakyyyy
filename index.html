@@ -182,8 +182,8 @@
     <div class="scan-warning"><strong>⚠️ Scanning can sometimes appear to freeze.</strong><br>If it takes more than about 1 minute, refresh the page and try again. It may take longer on low-end devices.</div>
     <div class="row"><label class="btn" for="video1File">Choose video 1 (timestamp video)</label><input type="file" id="video1File" accept="video/*"><span class="file-chosen" id="video1Name"></span></div>
     <div class="grid3">
-      <div class="field"><label>Center confidence <span class="val" id="centerThreshVal">50%</span></label><input type="range" id="centerThreshInput" min="50" max="99" step="1" value="50"></div>
-      <div class="field"><label>Full-frame confidence <span class="val" id="fullThreshVal">50%</span></label><input type="range" id="fullThreshInput" min="50" max="99" step="1" value="50"></div>
+      <div class="field"><label>Center confidence <span class="val" id="centerThreshVal">30%</span></label><input type="range" id="centerThreshInput" min="30" max="99" step="1" value="30"></div>
+      <div class="field"><label>Full-frame confidence <span class="val" id="fullThreshVal">30%</span></label><input type="range" id="fullThreshInput" min="30" max="99" step="1" value="30"></div>
       <div class="field"><label>Center crop size <span class="val" id="scanRatioVal">30%</span></label><input type="range" id="scanRatioInput" min="10" max="60" step="5" value="30"></div>
     </div>
     <div class="row"><button class="btn primary" id="scanBtn" disabled>Scan for flashes</button><button class="btn ghost" id="cancelScanBtn" style="display:none;">Cancel</button></div>

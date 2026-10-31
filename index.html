@@ -19,7 +19,7 @@ h2{margin:0 0 6px;font-size:1.2rem;font-weight:600;letter-spacing:-.02em;display
 .f small{display:block;color:#6f6f6f;font-size:.78rem;margin-top:6px;line-height:1.5}
 .v{font-variant-numeric:tabular-nums;font-weight:600;font-size:.92rem}
 input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:4px;background:#262626;margin:14px 0 6px;outline:none}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px #000,0 0 0 5px #3a3a3a;cursor:pointer;transition:transform .15s}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--hot,#fff);box-shadow:0 0 0 4px #000,0 0 0 5px #3a3a3a;cursor:pointer;transition:transform .15s}
 input[type=range]::-webkit-slider-thumb:active{transform:scale(1.15)}
 input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radius:50%;background:#fff;cursor:pointer}
 select,input[type=number],textarea{width:100%;background:#141414;color:#fff;border:1px solid #2a2a2a;border-radius:12px;padding:10px 12px;font:inherit;font-size:.9rem;outline:none;transition:border-color .15s}
@@ -28,7 +28,7 @@ input[type=number]{font-weight:600;font-variant-numeric:tabular-nums}
 textarea{height:96px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.74rem;resize:vertical}
 .btn{display:inline-flex;align-items:center;gap:6px;background:#141414;color:#fff;border:1px solid #2e2e2e;border-radius:999px;padding:10px 18px;font-weight:500;font-size:.88rem;cursor:pointer;margin:4px 6px 4px 0;user-select:none;transition:background .15s,color .15s,border-color .15s}
 .btn:hover{background:#262626;border-color:#444}
-.btn.solid{background:#fff;color:#000;border-color:#fff;font-weight:600}
+.btn.solid{background:var(--hot,#fff);color:#000;border-color:var(--hot,#fff);font-weight:600}
 .btn.solid:hover{background:#d6d6d6;border-color:#d6d6d6}
 .btn:disabled{opacity:.35;cursor:not-allowed}
 .btn:disabled:hover{background:#141414;border-color:#2e2e2e}
@@ -68,7 +68,7 @@ details[open] summary{margin-bottom:16px}
 <div class="app">
 <header>
   <div><h1>Shakyyyy</h1><div class="sm" style="margin-top:8px">Scans a video for a flash pattern, then punches in a shake on the real clip wherever it's found.</div></div>
-  <span class="tag">prototype · browser-only</span>
+  <span class="tag" id="hdrTag">prototype · browser-only</span>
 </header>
 
 <div class="notice" id="notice">
@@ -105,13 +105,13 @@ details[open] summary{margin-bottom:16px}
     <div class="f"><label>Shake mode</label>
       <select id="style">
         <option value="spiral" selected>Spiral (Alight Motion style)</option>
-        <option value="jitter">Jitter (CapCut style)</option>
+        <option value="jitter">Jitter</option>
         <option value="punch">Punch zoom</option>
         <option value="swing">Damped swing</option>
         <option value="heart">Heartbeat</option>
         <option value="rumble">Rumble</option>
         <option value="wobble">Rotation wobble</option>
-        <option value="buzz">Buzz</option>
+        <option value="buzz">Buzz (CapCut style)</option>
       </select><small id="styleDesc"></small></div>
     <div class="f"><label>Duration <span class="v" id="durV"></span></label><input type="range" id="dur" min="0.1" max="2" step="0.05" value="0.5" data-u="s"><small>Longer shakes keep the same size and fade more slowly.</small></div>
     <div class="f" data-m="jitter,rumble,buzz" data-g="pulse,spring,custom" data-or="1"><label>Speed <span class="v" id="freqV"></span></label><input type="range" id="freq" min="0.5" max="25" step="0.1" value="4" data-u="spd"><small>Jitter: spots per second. Pulse, Spring and Custom graphs wobble at this speed. Rumble and Buzz: tremor speed.</small></div>
@@ -134,6 +134,7 @@ details[open] summary{margin-bottom:16px}
         <option value="spring">Spring</option>
         <option value="custom">Custom</option>
       </select><small>Controls how the shake strength changes over time.</small></div>
+    <div class="f"><label>Attack <span class="v" id="atkV"></span></label><input type="range" id="atk" min="0" max="200" step="5" value="0" data-u="ms"><small>How early the shake starts. It begins this many ms before the flash and peaks right on it.</small></div>
     <div class="f"><label>Flash at start <input type="checkbox" id="flashOn" style="width:18px;height:18px;accent-color:#fff"></label>
       <input type="range" id="flash" min="-20" max="50" step="1" value="20">
       <input type="number" id="flashNum" min="-20" max="50" step="1" value="20">
@@ -154,7 +155,7 @@ details[open] summary{margin-bottom:16px}
       <div class="f" data-g="custom"><label>Custom graph phase (cycles)</label><input type="number" id="cPhase" min="-10" max="10" step="0.01" value="0"></div>
       <div class="f" data-g="custom"><label>Custom graph mix <span class="v" id="mixV"></span></label><input type="range" id="mix" min="0" max="1" step="0.01" value="0.5" data-u="d2"></div>
       <div class="f"><label>Orbit radius multiplier</label><input type="number" id="radMult" min="0" max="10" step="0.05" value="1"></div>
-      <div class="f"><label>Attack <span class="v" id="atkV"></span></label><input type="range" id="atk" min="0" max="200" step="5" value="0" data-u="ms"><small>How early the shake starts. It begins this many ms before the flash and peaks right on it.</small></div>
+      
       <div class="f"><label>Shake centre X (%)</label><input type="number" id="cx" min="-100" max="100" step="1" value="0"></div>
       <div class="f"><label>Shake centre Y (%)</label><input type="number" id="cy" min="-100" max="100" step="1" value="0"></div>
     </div>
@@ -204,12 +205,19 @@ const smooth=x=>x*x*(3-2*x);
 const TAU=Math.PI*2;
 const mk=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
 const HDR=matchMedia('(dynamic-range: high)').matches;
-const EXT=HDR&&CSS.supports('color','color(srgb 1.5 1.5 1.5)');
+const PQ=CSS.supports('color','color(rec2100-pq 0.6 0.6 0.6)');
+const EXT=CSS.supports('color','color(srgb 1.5 1.5 1.5)');
+const HOT_MODE=HDR&&PQ?'pq':(HDR&&EXT?'ext':'sdr');
+// Brightness above SDR white. In PQ, 0.58 is about 203 nits (SDR white), so higher values are real HDR light.
+const HOT=t=>{if(HOT_MODE==='pq'){const v=(0.5+0.25*t).toFixed(3);return `color(rec2100-pq ${v} ${v} ${v})`;}if(HOT_MODE==='ext'){const v=(0.45+1.6*t).toFixed(3);return `color(srgb ${v} ${v} ${v})`;}const c=Math.round(105+150*t);return `rgb(${c},${c},${c})`;};
+const hdrTag=$('hdrTag');
+hdrTag.textContent=HOT_MODE==='pq'?'HDR on · bright highlights':HOT_MODE==='ext'?'HDR display · extended brightness':HDR?'HDR screen, but this browser cannot show extra brightness':'SDR screen · HDR needs an HDR display and browser';
+document.documentElement.style.setProperty('--hot',HOT_MODE==='sdr'?'#fff':HOT(1));
 window.onerror=(m,s,l)=>{const b=$('err');b.textContent='Something went wrong: '+m+' (line '+l+'). Refresh the page and try again.';b.style.display='block';};
 $('noticeOk').onclick=()=>{$('notice').style.display='none';};
 
 const UNIT={spd:v=>(+v).toFixed(1),n:v=>String(Math.round(v)),pct:v=>Math.round(v)+'%',s:v=>(+v).toFixed(2)+'s',hz:v=>(+v).toFixed(1)+' Hz',laps:v=>(+v).toFixed(1)+' laps',ms:v=>Math.round(v)+' ms',px:v=>Math.round(v)+' px',d2:v=>(+v).toFixed(2)};
-const STYLE_DESC={spiral:'A swirling circle that shrinks away, with a little random scatter.',jitter:'Glides to a spot, then picks the next one as it arrives. Scattered, not a circle.',punch:'A quick zoom that snaps back.',swing:'Back-and-forth swing along one line, fading out.',heart:'Two thumps, like a heartbeat.',rumble:'Slow, heavy wobble, like an earthquake.',wobble:'Tilts left and right, like a rocking boat.',buzz:'A fast, tiny tremor, like a phone buzzing.'};
+const STYLE_DESC={spiral:'A swirling circle that shrinks away, with a little random scatter.',jitter:'Snaps to a random spot at full strength, then picks the next one as it arrives.',punch:'A quick zoom that snaps back.',swing:'Back-and-forth swing along one line, fading out.',heart:'Two thumps, like a heartbeat.',rumble:'Slow, heavy wobble, like an earthquake.',wobble:'Tilts left and right, like a rocking boat.',buzz:'A fast, tiny tremor, like a phone buzzing.'};
 // Starting values for each mode. Switching modes loads these.
 const PRESET={
   spiral:{dur:.5,mag:15,freq:4,laps:3,scatter:10,dir:'1',graph:'linear',atk:0,jm:'smooth',axis:'both'},
@@ -222,7 +230,7 @@ const PRESET={
   buzz:{dur:.5,mag:35,freq:2.9,graph:'easeOut',atk:105,axis:'both'}
 };
 
-function glow(t){if(EXT){const v=(0.42+1.6*t).toFixed(3);return `color(srgb ${v} ${v} ${v})`;}const c=Math.round(105+150*t);return `rgb(${c},${c},${c})`;}
+function glow(t){return HOT(t);}
 function paint(el){
   const lo=+el.min,hi=+el.max,t=clamp((+el.value-lo)/((hi-lo)||1),0,1);
   if(el.type==='number'){el.style.color=glow(t);return;}
@@ -322,8 +330,8 @@ function env(q,t,p){
   }
 }
 function rnd(n,s){const x=Math.sin(n*12.9898+s*78.233)*43758.5453;return(x-Math.floor(x))*2-1;}
-// Jitter path: each new spot is picked when the previous move finishes, jumping across the centre at random angles.
-function spotList(n,sd){const pts=[];let a=TAU*(rnd(-1,sd)+1)/2;for(let i=0;i<=n;i++){const r=0.8+0.2*rnd(i+5000,sd);pts.push({x:r*Math.cos(a),y:r*Math.sin(a)});a+=TAU*(0.25+0.25*(rnd(i+1000,sd)+1));}return pts;}
+// Jitter spots: each one is a random point at 70-100% of full strength, so the shake uses its whole magnitude and never drifts toward the centre.
+function spotList(n,sd){const pts=[];for(let i=0;i<=n;i++){const a=TAU*(rnd(i+1000,sd)+1)/2,r=0.7+0.3*(rnd(i+5000,sd)+1)/2;pts.push({x:r*Math.cos(a),y:r*Math.sin(a)});}return pts;}
 let scr=null;function scratch(W,H){if(!scr||scr.width!==W||scr.height!==H)scr=mk(W,H);return scr;}
 // Scatter points for the Spiral mode: fully random, like the original.
 function scatterRaw(t,p){
@@ -331,12 +339,12 @@ function scatterRaw(t,p){
   const pt=i=>{const a=rnd(2*i,p.seed)*Math.PI,m=(rnd(2*i+1,p.seed)+1)/2;return{x:m*Math.cos(a),y:m*Math.sin(a)};};
   const A=pt(k),B=pt(k+1);return{x:A.x+(B.x-A.x)*e,y:A.y+(B.y-A.y)*e};
 }
-function raw(u,t,p){
+function raw(u,t,p,Lt){
   const a=p.phase*Math.PI/180,d=p.dir,f=Math.max(.01,p.freq),sd=p.seed;
   switch(p.style){
     case'spiral':{const g=d*TAU*p.laps*u+a;return{x:Math.cos(g),y:Math.sin(g)};}
-    case'jitter':{const idx=Math.floor(t*f),fr=t*f-idx,pts=spotList(idx+1,sd),A=pts[idx],B=pts[idx+1];
-      if(p.jm==='step')return A;const e=smooth(fr);return{x:A.x+(B.x-A.x)*e,y:A.y+(B.y-A.y)*e};}
+    case'jitter':{const tj=t+(Lt||0),idx=Math.floor(tj*f),fr=tj*f-idx,pts=spotList(idx+1,sd),A=pts[idx],B=pts[idx+1];
+      if(p.jm==='step')return A;const e=smooth(clamp(fr*1.6,0,1));return{x:A.x+(B.x-A.x)*e,y:A.y+(B.y-A.y)*e};}
     case'punch':return{s:1};
     case'swing':return{x:d*Math.cos(TAU*p.laps*u+a)};
     case'heart':return{y:-(Math.exp(-(((u-.08)/.08)**2))+.6*Math.exp(-(((u-.3)/.08)**2)))};
@@ -347,20 +355,22 @@ function raw(u,t,p){
   return{};
 }
 function shakeAt(t,p,W,H){
-  // t = seconds from the flash. Negative values are the lead-in: with Attack set, the shake starts early and peaks on the flash.
+  // t = seconds from the flash. Negative values are the lead-in. Over the lead-in the magnitude grows 0% -> 100% and the speed 50% -> 100%, so the shake is at full size and speed exactly on the flash.
   const dur=Math.max(.01,p.duration),lead=Math.max(0,p.attack);
   if(t<-lead||t>=dur)return null;
-  const ramp=t<0?smooth(clamp((t+lead)/Math.max(lead,1e-6),0,1)):1;
-  const tc=Math.max(0,t),u=clamp(tc/dur,0,1);
+  let c=t,mag=1;
+  const Lt=.75*lead;
+  if(t<0&&lead>0){const pr=clamp((t+lead)/lead,0,1);mag=smooth(pr);c=lead*(.5*pr+.5*(pr**3-pr**4/2))-Lt;}
+  const u=c/dur,uq=clamp(u,0,1),tc=Math.max(0,c);
   const M=W,s=p.mag*0.0041667*p.radMult;
-  const k=clamp(env(u,tc,p),0,1)*ramp;
-  const r=raw(u,tc,p);
+  const k=clamp(env(uq,tc,p),0,1)*mag;
+  const r=raw(u,c,p,Lt);
   let x=(r.x||0)*s*k*M,y=(r.y||0)*s*k*M;
-  if(p.style==='spiral'&&p.scatter>0){const sc=scatterRaw(tc,p),amp=p.scatter/1000*M*k;x+=sc.x*amp;y+=sc.y*amp;}
+  if(p.style==='spiral'&&p.scatter>0){const sc=scatterRaw(c,p),amp=p.scatter/1000*M*k;x+=sc.x*amp;y+=sc.y*amp;}
   x=clamp(x,-.4*M,.4*M);y=clamp(y,-.4*M,.4*M);
   if(p.axis==='x')y=0;else if(p.axis==='y')x=0;
   return{dx:x+p.cx*W,dy:y+p.cy*H,scale:clamp(1+(r.s||0)*s*1.5*k,.5,2),rot:(r.r||0)*s*3*k,
-    flash:p.flashOn?p.flashPct/100*ramp*(1-u)*(1-u):0};
+    flash:p.flashOn?p.flashPct/100*mag*(1-uq)*(1-uq):0};
 }
 function gray(v,hdr){if(v>1&&hdr)return`color(display-p3 ${v.toFixed(3)} ${v.toFixed(3)} ${v.toFixed(3)})`;const c=Math.round(clamp(v,0,1)*255);return`rgb(${c},${c},${c})`;}
 function drawFrame(ctx,src,W,H,sh,R){

@@ -196,10 +196,6 @@ details[open] summary{margin-bottom:16px}
 </div>
 <div id="err"></div>
 
-<script type="module">
-import * as MB from "https://cdn.jsdelivr.net/npm/mediabunny@1.55.1/dist/bundles/mediabunny.min.mjs";
-window.Mediabunny = MB;
-</script>
 <script>
 (()=>{
 const $=id=>document.getElementById(id);
@@ -213,7 +209,7 @@ window.onerror=(m,s,l)=>{const b=$('err');b.textContent='Something went wrong: '
 $('noticeOk').onclick=()=>{$('notice').style.display='none';};
 
 const UNIT={spd:v=>(+v).toFixed(1),n:v=>String(Math.round(v)),pct:v=>Math.round(v)+'%',s:v=>(+v).toFixed(2)+'s',hz:v=>(+v).toFixed(1)+' Hz',laps:v=>(+v).toFixed(1)+' laps',ms:v=>Math.round(v)+' ms',px:v=>Math.round(v)+' px',d2:v=>(+v).toFixed(2)};
-const STYLE_DESC={spiral:'A swirling circle that shrinks away, with a little random scatter.',jitter:'Glides to a spot, then picks the next one as it arrives. Loosely circular.',punch:'A quick zoom that snaps back.',swing:'Back-and-forth swing along one line, fading out.',heart:'Two thumps, like a heartbeat.',rumble:'Slow, heavy wobble, like an earthquake.',wobble:'Tilts left and right, like a rocking boat.',buzz:'A fast, tiny tremor, like a phone buzzing.'};
+const STYLE_DESC={spiral:'A swirling circle that shrinks away, with a little random scatter.',jitter:'Glides to a spot, then picks the next one as it arrives. Scattered, not a circle.',punch:'A quick zoom that snaps back.',swing:'Back-and-forth swing along one line, fading out.',heart:'Two thumps, like a heartbeat.',rumble:'Slow, heavy wobble, like an earthquake.',wobble:'Tilts left and right, like a rocking boat.',buzz:'A fast, tiny tremor, like a phone buzzing.'};
 // Starting values for each mode. Switching modes loads these.
 const PRESET={
   spiral:{dur:.5,mag:15,freq:4,laps:3,scatter:10,dir:'1',graph:'linear',atk:0,jm:'smooth',axis:'both'},
@@ -325,8 +321,8 @@ function env(q,t,p){
   }
 }
 function rnd(n,s){const x=Math.sin(n*12.9898+s*78.233)*43758.5453;return(x-Math.floor(x))*2-1;}
-// Jitter path: each new spot is picked when the previous move finishes, a bit further round a loose circle.
-function spotList(n,sd){const pts=[];let a=TAU*(rnd(-1,sd)+1)/2;for(let i=0;i<=n;i++){const r=0.85+0.15*rnd(i+5000,sd);pts.push({x:r*Math.cos(a),y:r*Math.sin(a)});a+=TAU*(0.15+0.15*(rnd(i+1000,sd)+1)/2);}return pts;}
+// Jitter path: each new spot is picked when the previous move finishes, jumping across the centre at random angles.
+function spotList(n,sd){const pts=[];let a=TAU*(rnd(-1,sd)+1)/2;for(let i=0;i<=n;i++){const r=0.8+0.2*rnd(i+5000,sd);pts.push({x:r*Math.cos(a),y:r*Math.sin(a)});a+=TAU*(0.25+0.25*(rnd(i+1000,sd)+1));}return pts;}
 let scr=null;function scratch(W,H){if(!scr||scr.width!==W||scr.height!==H)scr=mk(W,H);return scr;}
 // Scatter points for the Spiral mode: fully random, like the original.
 function scatterRaw(t,p){
@@ -493,14 +489,16 @@ function renderRows(){
 $('addMan').onclick=()=>{const v=parseFloat($('manT').value);if(isNaN(v)||v<0)return;triggers.push({t:v,c:null,f:null});$('manT').value='';renderRows();};
 
 // ---------- Video 2: preview and export (step 4) ----------
-const v2=document.createElement('video');v2.playsInline=true;
+const v2=document.createElement('video');v2.playsInline=true;v2.preload='auto';v2.style.cssText='position:fixed;left:0;top:0;width:2px;height:2px;opacity:.01;pointer-events:none;z-index:-1';document.body.appendChild(v2);
 let v2ok=false,v2File=null,rf=null,exporting=false;
 const rc=$('renderCanvas'),rctx=rc.getContext('2d',{colorSpace:'display-p3',colorType:'float16'});
 $('v2File').onchange=function(){const f=this.files[0];if(!f)return;v2File=f;$('v2Name').textContent=f.name;v2ok=false;v2.src=URL.createObjectURL(f);
-  v2.onloadeddata=()=>{v2ok=true;const s=Math.min(1,1280/v2.videoWidth);rc.width=Math.round(v2.videoWidth*s);rc.height=Math.round(v2.videoHeight*s);
+  const waitingFor=f;setTimeout(()=>{if(!v2ok&&v2File===waitingFor){v2.load();msg('msgExp','Video 2 is taking too long to open. This browser may not support this file. If it still does not open, export it as an H.264 MP4 and choose that file instead.',true);}},10000);
+  const onV2=()=>{if(v2ok)return;v2ok=true;const s=Math.min(1,1280/v2.videoWidth);rc.width=Math.round(v2.videoWidth*s);rc.height=Math.round(v2.videoHeight*s);
     $('playBtn').disabled=false;updExport();refresh();
     if(v1ok&&Math.abs(v1.duration-v2.duration)>.5)msg('msgExp',`<b>Check the files.</b> Video 1 is ${v1.duration.toFixed(1)} s and Video 2 is ${v2.duration.toFixed(1)} s. They should be the same clip, or the flashes will land at the wrong time.`,true);
-    else hideMsg('msgExp');};};
+    else hideMsg('msgExp');};
+  v2.onloadedmetadata=onV2;v2.oncanplay=onV2;v2.onloadeddata=onV2;};
 function drawV2(t){const P=readP();const tr=triggers.find(g=>t-g.t>=-P.attack&&t-g.t<P.duration);
   drawFrame(rctx,v2,rc.width,rc.height,tr?shakeAt(t-tr.t,P,rc.width,rc.height):null,P.mirror);}
 function refresh(){if(v2ok&&v2.paused)drawV2(v2.currentTime);}
@@ -508,6 +506,7 @@ function loop(){if(v2.paused||v2.ended){rf=null;return;}drawV2(v2.currentTime);r
 v2.onplay=()=>{$('pauseBtn').disabled=false;if(!rf)rf=requestAnimationFrame(loop);};
 v2.onpause=()=>{$('pauseBtn').disabled=true;refresh();};
 v2.onended=refresh;v2.onseeked=refresh;
+v2.onerror=()=>msg('msgExp',`This browser cannot read Video 2. Most iPhone videos are HEVC, which Chrome on Windows often cannot open. Export it as an H.264 MP4 and choose that file instead.`,true);
 $('playBtn').onclick=()=>{if(v2ok)v2.play();};
 $('pauseBtn').onclick=()=>v2.pause();
 
@@ -515,7 +514,15 @@ function outDims(){const r=v2.videoWidth/v2.videoHeight;let W,H;
   if(r>=1){W=1920;H=Math.round(W/r);if(H>1080){H=1080;W=Math.round(H*r);}}
   else{H=1920;W=Math.round(H*r);if(W>1080){W=1080;H=Math.round(W/r);}}
   return{W:Math.max(2,Math.round(W/2)*2),H:Math.max(2,Math.round(H/2)*2)};}
-function updExport(){if(!exporting)$('exportBtn').disabled=!(v2ok&&v2File&&window.Mediabunny);}
+let mbP=null;
+function loadMB(){if(window.Mediabunny)return Promise.resolve(window.Mediabunny);
+  if(!mbP){mbP=(async()=>{const urls=['https://cdn.jsdelivr.net/npm/mediabunny@1.55.1/dist/bundles/mediabunny.min.mjs','https://cdn.jsdelivr.net/npm/mediabunny@1.55.1/+esm'];let last;
+    for(const u of urls){try{const m=await import(u);window.Mediabunny=m;return m;}catch(e){last=e;}}
+    throw last||new Error('no source');})().catch(e=>{mbP=null;throw e;});}
+  return mbP;}
+function updExport(){if(exporting)return;const ok=v2ok&&v2File&&window.Mediabunny;$('exportBtn').disabled=!ok;
+  if(!ok&&v2File&&!v2ok)$('expStatus').textContent='Export is waiting for Video 2 to load. If it never loads, this browser may not be able to read that file. Try an H.264 MP4.';
+  else if(!ok&&v2ok&&!window.Mediabunny)$('expStatus').textContent='Export is waiting for the export engine to load. Check your connection and refresh the page.';}
 setInterval(updExport,500);
 const even=v=>Math.max(2,Math.round(v/2)*2);
 const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'})[c]);
@@ -586,6 +593,7 @@ document.querySelectorAll('input[type=range]').forEach(paint);
 document.querySelectorAll('input[type=number]').forEach(paint);
 paint($('flashNum'));
 applyPreset('spiral');
+loadMB().then(updExport,e=>{msg('msgExp','The export engine could not load. Check your internet connection, then refresh the page. Details: '+esc((e&&e.message)||e),true);});
 $('styleDesc').textContent=STYLE_DESC.spiral;
 applyVis();
 })();

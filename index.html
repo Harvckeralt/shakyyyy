@@ -1,739 +1,593 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shakyyyy</title>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Shakyyyy</title>
 <style>
-  :root{
-    --bg:#0e1013; --panel:#161920; --panel-2:#1d2129; --line:#2a2f3a;
-    --text:#e8eaee; --muted:#8a90a0;
-    --lock:#ff4d6d; --seek:#4cc9f0; --spiral:#b967ff; --ok:#6ee7a8; --warn:#ffb454;
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;}
-  .app{max-width:1180px;margin:0 auto;padding:28px 18px 70px;}
-  header.top{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px;padding-bottom:18px;border-bottom:1px solid var(--line);}
-  header.top h1{margin:0;font-size:1.5rem;font-weight:700;letter-spacing:-.01em;}
-  header.top h1 span{color:var(--spiral);}
-  header.top p{margin:4px 0 0;color:var(--muted);font-size:.92rem;max-width:55ch;}
-  .stage-tag{font-size:.78rem;color:var(--muted);border:1px solid var(--line);padding:5px 10px;border-radius:6px;white-space:nowrap;}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:16px;}
-  .card h2{margin:0 0 4px;font-size:1rem;font-weight:600;}
-  .card .hint{margin:0 0 14px;color:var(--muted);font-size:.83rem;line-height:1.5;}
-  .step-mark{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:5px;background:var(--panel-2);border:1px solid var(--line);font-size:.72rem;color:var(--muted);margin-right:8px;}
-  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px;}
-  .btn{appearance:none;border:1px solid var(--line);background:var(--panel-2);color:var(--text);padding:9px 14px;border-radius:7px;font-size:.85rem;cursor:pointer;font-weight:500;display:inline-block;text-align:center;}
-  .btn:hover{border-color:#3a4152;}
-  .btn:disabled{opacity:.4;cursor:not-allowed;}
-  .btn.primary{background:var(--spiral);border-color:var(--spiral);color:#160822;font-weight:700;}
-  .btn.primary:hover{background:#c785ff;}
-  .btn.primary:disabled{background:var(--panel-2);border-color:var(--line);color:var(--muted);}
-  .btn.ghost{background:transparent;}
-  .btn.danger{border-color:var(--lock);color:var(--lock);background:transparent;}
-  input[type="file"]{display:none;}
-  textarea.jsonbox{width:100%;height:130px;background:#0b0d10;border:1px solid var(--line);color:#b9c4d4;border-radius:8px;padding:12px;font-family:"SF Mono",Menlo,Consolas,monospace;font-size:.72rem;line-height:1.5;resize:vertical;}
-  .field{margin-top:14px;}
-  .field label{display:flex;justify-content:space-between;font-size:.83rem;margin-bottom:6px;}
-  .field label .val{color:var(--muted);font-variant-numeric:tabular-nums;}
-  .field .subnote{display:block;color:var(--muted);font-size:.72rem;margin-top:4px;font-weight:400;}
-  .field input[type="range"]{width:100%;accent-color:var(--spiral);}
-  .field input[type="number"], .field select{width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);padding:8px 10px;border-radius:6px;font-size:.85rem;}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
-  @media (max-width:640px){ .grid3{grid-template-columns:1fr 1fr;} }
-  details.adv{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-top:18px;}
-  details.adv summary{cursor:pointer;font-size:.85rem;font-weight:700;color:var(--warn);list-style:none;}
-  details.adv summary::-webkit-details-marker{display:none;}
-  details.adv summary::before{content:"▸ ";}
-  details.adv[open] summary::before{content:"▾ ";}
-  details.adv[open] summary{margin-bottom:12px;}
-  details.adv .hint{margin-top:-4px;}
-  .pattern-summary{display:flex;gap:14px;align-items:center;margin-top:10px;}
-  .swatch-lg{width:44px;height:44px;border-radius:8px;border:1px solid var(--line);flex-shrink:0;}
-  .pattern-summary .meta{font-size:.78rem;color:var(--muted);line-height:1.6;}
-  .pattern-summary .meta b{color:var(--text);}
-  canvas.stage-canvas{width:100%;height:auto;display:block;background:#000;border-radius:8px;border:1px solid var(--line);touch-action:none;}
-  .canvas-wrap{position:relative;}
-  .legend{position:absolute;top:10px;left:10px;display:flex;gap:10px;flex-wrap:wrap;pointer-events:none;}
-  .legend span{font-size:.72rem;padding:4px 8px;border-radius:5px;background:rgba(14,16,19,.75);display:flex;align-items:center;gap:6px;}
-  .swatch{width:9px;height:9px;border-radius:2px;display:inline-block;}
-  .status-line{font-size:.78rem;color:var(--muted);margin-top:10px;min-height:1.2em;}
-  .status-line.ok{color:var(--ok);}
-  .status-line.warn{color:var(--warn);}
-  .progress{height:6px;background:var(--panel-2);border-radius:3px;overflow:hidden;margin-top:12px;border:1px solid var(--line);}
-  .progress > div{height:100%;background:var(--spiral);width:0%;transition:width .1s linear;}
-  table.trig{width:100%;border-collapse:collapse;margin-top:12px;font-size:.8rem;}
-  table.trig th{text-align:left;color:var(--muted);font-weight:500;padding:6px 8px;border-bottom:1px solid var(--line);}
-  table.trig td{padding:6px 8px;border-bottom:1px solid var(--line);}
-  table.trig button{background:none;border:none;color:var(--lock);cursor:pointer;font-size:.9rem;}
-  .empty-note{color:var(--muted);font-size:.82rem;padding:14px;text-align:center;border:1px dashed var(--line);border-radius:8px;}
-  .scan-warning{margin:16px 0;padding:16px 18px;border:2px solid var(--warn);border-radius:10px;background:rgba(255,193,7,.12);color:var(--text);font-size:1.05rem;line-height:1.5;box-shadow:0 3px 14px rgba(0,0,0,.18);}
-  .scan-warning strong{font-size:1.15rem;}
-  .file-chosen{font-size:.78rem;color:var(--ok);margin-left:2px;}
-  .divider-hint{margin:16px 0 0;color:var(--muted);font-size:.78rem;border-top:1px dashed var(--line);padding-top:14px;}
-  footer.note{margin-top:26px;color:var(--muted);font-size:.78rem;line-height:1.6;border-top:1px solid var(--line);padding-top:16px;}
-  #errorBar{display:none;position:sticky;top:0;z-index:9999;background:#b00020;color:#fff;border:2px solid #ff5a70;border-radius:8px;padding:11px 14px;margin:0 0 16px;font:600 .82rem/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;box-shadow:0 4px 18px rgba(0,0,0,.35);white-space:pre-wrap;word-break:break-word;}
-  #errorBar.show{display:block;}
-  #errorBar small{display:block;font:500 .72rem/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;opacity:.9;margin-top:4px;}
-</style>
-</head>
+:root{color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:#000;color:#f2f2f2;font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.app{max-width:1080px;margin:0 auto;padding:40px 20px 90px}
+header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+h1{margin:0;font-size:2.6rem;font-weight:700;letter-spacing:-.045em;line-height:1}
+.tag{border:1px solid #2e2e2e;border-radius:999px;padding:6px 14px;font-size:.78rem;color:#d6d6d6;background:#141414}
+.notice{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1px solid #3a3a3a;background:#111;border-radius:18px;padding:16px 18px;margin-bottom:22px;font-size:.92rem;line-height:1.6;color:#cfcfcf}
+.notice b{color:#fff;font-weight:600}
+.card{background:#0a0a0a;border:1px solid #1f1f1f;border-radius:22px;padding:26px;margin-bottom:18px;box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
+h2{margin:0 0 6px;font-size:1.2rem;font-weight:600;letter-spacing:-.02em;display:flex;align-items:center}
+.step-mark{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:999px;background:#fff;color:#000;font-size:.8rem;font-weight:700;margin-right:10px;flex-shrink:0}
+.hint{margin:0 0 18px;color:#8f8f8f;font-size:.92rem;line-height:1.6}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px 20px}
+.f label{display:flex;justify-content:space-between;align-items:baseline;font-weight:500;font-size:.88rem;color:#d9d9d9;margin-bottom:2px;gap:8px}
+.f small{display:block;color:#6f6f6f;font-size:.78rem;margin-top:6px;line-height:1.5}
+.v{font-variant-numeric:tabular-nums;font-weight:600;font-size:.92rem}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:4px;background:#262626;margin:14px 0 6px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px #000,0 0 0 5px #3a3a3a;cursor:pointer;transition:transform .15s}
+input[type=range]::-webkit-slider-thumb:active{transform:scale(1.15)}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radius:50%;background:#fff;cursor:pointer}
+select,input[type=number],textarea{width:100%;background:#141414;color:#fff;border:1px solid #2a2a2a;border-radius:12px;padding:10px 12px;font:inherit;font-size:.9rem;outline:none;transition:border-color .15s}
+select:focus,input[type=number]:focus,textarea:focus{border-color:#fff}
+input[type=number]{font-weight:600;font-variant-numeric:tabular-nums}
+textarea{height:96px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.74rem;resize:vertical}
+.btn{display:inline-flex;align-items:center;gap:6px;background:#141414;color:#fff;border:1px solid #2e2e2e;border-radius:999px;padding:10px 18px;font-weight:500;font-size:.88rem;cursor:pointer;margin:4px 6px 4px 0;user-select:none;transition:background .15s,color .15s,border-color .15s}
+.btn:hover{background:#262626;border-color:#444}
+.btn.solid{background:#fff;color:#000;border-color:#fff;font-weight:600}
+.btn.solid:hover{background:#d6d6d6;border-color:#d6d6d6}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn:disabled:hover{background:#141414;border-color:#2e2e2e}
+.btn.solid:disabled:hover{background:#fff;border-color:#fff}
+input[type=file]{display:none}
+:focus-visible{outline:2px solid #fff;outline-offset:3px}
+canvas{display:block;width:100%;height:auto;background:#050505;border:1px solid #222;border-radius:16px}
+.canvas-wrap{position:relative}
+.legend{position:absolute;top:12px;left:12px;display:flex;gap:8px;pointer-events:none}
+.legend span{background:rgba(0,0,0,.75);border-radius:999px;padding:4px 10px;font-size:.74rem;display:flex;gap:6px;align-items:center}
+.sw{width:8px;height:8px;border-radius:50%;display:inline-block}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px}
+.mt{margin-top:18px}
+.msg{display:none;margin-top:16px;padding:14px 16px;border:1px solid #2a2a2a;border-radius:16px;background:#141414;line-height:1.6;font-size:.92rem;color:#e6e6e6}
+.msg.show{display:block}
+.msg.bad{background:#fff;color:#000;border-color:#fff}
+.msg b{font-weight:600}
+.bar{height:6px;border-radius:999px;background:#1a1a1a;margin-top:16px;display:none;overflow:hidden}
+.bar div{height:100%;width:0;background:#fff;border-radius:999px;transition:width .2s linear}
+.status{font-size:.86rem;color:#a8a8a8;margin-top:10px;min-height:1.2em}
+table{width:100%;border-collapse:collapse;margin-top:16px;font-size:.88rem;display:none}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid #1f1f1f}
+th{font-weight:500;color:#6f6f6f;font-size:.74rem;text-transform:uppercase;letter-spacing:.08em}
+td button{background:transparent;color:#bbb;border:1px solid #2e2e2e;border-radius:999px;cursor:pointer;padding:2px 9px;font-size:.78rem}
+td button:hover{background:#fff;color:#000;border-color:#fff}
+details{border:1px solid #1f1f1f;border-radius:16px;padding:14px 18px;margin-top:18px;background:#070707}
+summary{cursor:pointer;font-weight:500;color:#d9d9d9;font-size:.9rem;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";float:right;color:#777;font-weight:400}
+details[open] summary::after{content:"\2013"}
+details[open] summary{margin-bottom:16px}
+.empty{border:1px dashed #2a2a2a;border-radius:16px;padding:18px;text-align:center;color:#6f6f6f;font-size:.88rem;margin-top:16px}
+.sm{font-size:.86rem;color:#a3a3a3;line-height:1.6}
+#err{display:none;position:fixed;left:12px;right:12px;bottom:12px;background:#fff;color:#000;padding:12px 16px;border-radius:14px;font-weight:600;z-index:99}
+</style></head>
 <body>
-<div id="errorBar" role="alert" aria-live="assertive"></div>
 <div class="app">
-  <header class="top">
-    <div>
-      <h1>Shak<span>yyyy</span></h1>
-      <p>Scans a video for a flash pattern, then punches in a decaying spiral shake on the real clip wherever it's found.</p>
-    </div>
-    <div class="stage-tag">prototype — browser-only</div>
-  </header>
+<header>
+  <div><h1>Shakyyyy</h1><div class="sm" style="margin-top:8px">Scans a video for a flash pattern, then punches in a shake on the real clip wherever it's found.</div></div>
+  <span class="tag">prototype · browser-only</span>
+</header>
 
-  <div class="card">
-    <h2><span class="step-mark">1</span>Load the pattern</h2>
-    <p class="hint">Upload the pattern image and it's converted to matching data right here — drag to mark just the flash pattern, or leave it to use the whole frame.</p>
-    <div class="row">
-      <label class="btn primary" for="patternImageFile">Upload pattern image</label>
-      <input type="file" id="patternImageFile" accept="image/*">
-    </div>
-    <div id="patternCropWrap" style="display:none;margin-top:12px;">
-      <div class="canvas-wrap">
-        <canvas class="stage-canvas" id="patternViewCanvas"></canvas>
-        <div class="legend">
-          <span><i class="swatch" style="background:var(--lock)"></i>full pattern</span>
-          <span><i class="swatch" style="background:var(--seek)"></i>center check</span>
-        </div>
-      </div>
-      <div class="grid3">
-        <div class="field"><label>Full resolution <span class="val" id="pFullResVal">32</span></label><input type="number" id="pFullRes" min="4" max="128" value="32"></div>
-        <div class="field"><label>Center resolution <span class="val" id="pCenterResVal">8</span></label><input type="number" id="pCenterRes" min="2" max="64" value="8"></div>
-        <div class="field"><label>Center crop size <span class="val" id="pCenterRatioVal">30%</span></label><input type="range" id="pCenterRatio" min="10" max="60" step="5" value="30"></div>
-      </div>
-      <div class="row"><button class="btn ghost" id="pWholeBtn">Use whole image</button><button class="btn primary" id="extractPatternBtn">Extract &amp; use pattern</button></div>
-    </div>
-    <p class="divider-hint">Already have pattern JSON from before? Paste or upload it instead.</p>
-    <div class="row"><label class="btn" for="patternFile">Upload pattern JSON</label><input type="file" id="patternFile" accept="application/json,.json"><span class="file-chosen" id="patternFileName"></span></div>
-    <textarea class="jsonbox" id="patternPaste" placeholder="…or paste pattern JSON here"></textarea>
-    <div class="row"><button class="btn" id="loadPatternBtn">Use this pattern</button></div>
-    <div id="patternSummary" style="display:none;"><div class="pattern-summary"><canvas class="swatch-lg" id="patternSwatch" width="44" height="44"></canvas><div class="meta" id="patternMetaText"></div></div></div>
-    <div class="status-line" id="patternStatus"></div>
-  </div>
-
-  <div class="card">
-    <h2><span class="step-mark">2</span>Shake shape</h2>
-    <p class="hint">Tune the spiral shake and preview it looping on a still image. Magnitude controls the orbit radius; Rotation is the number of laps around the orbit point.</p>
-    <div class="grid3">
-      <div class="field"><label>Duration <span class="val" id="durVal">0.50s</span></label><input type="range" id="durInput" min="0.1" max="2" step="0.05" value="0.5"></div>
-      <div class="field"><label>Frequency <span class="val" id="freqVal">4.0 Hz</span></label><input type="range" id="freqInput" min="0.5" max="25" step="0.1" value="4"><span class="subnote">Used by Pulse / Bounce and available to custom graphs.</span></div>
-      <div class="field"><label>Rotation <span class="val" id="rotVal">3.0 laps</span></label><input type="range" id="rotInput" min="0" max="10" step="0.1" value="3"><span class="subnote">How many times it laps around the orbit point.</span></div>
-      <div class="field"><label>Magnitude <span class="val" id="zoomVal">15%</span></label><input type="range" id="zoomInput" min="0" max="50" step="1" value="15"><span class="subnote">How far out the orbit swings.</span></div>
-      <div class="field"><label>Scatter <span class="val" id="scatterVal">10 px</span></label><input type="range" id="scatterInput" min="0" max="100" step="1" value="10"><span class="subnote">Adds a new slight random destination offset every 0.1s.</span></div>
-      <div class="field"><label>Jitter method</label><select id="advScatterModeInput"><option value="smooth" selected>Smooth</option><option value="step">Step</option></select><span class="subnote">How the random scatter moves between destinations.</span></div>
-      <div class="field"><label>Direction</label><select id="rotationDirectionInput"><option value="1" selected>Clockwise</option><option value="-1">Counter-clockwise</option></select></div>
-      <div class="field">
-        <label>Graph</label>
-        <select id="graphInput">
-          <option value="linear">Linear</option>
-          <option value="exponential">Exponential (snappier)</option>
-          <option value="easeOut">Ease out (soft tail)</option>
-          <option value="easeIn">Ease in (slow start)</option>
-          <option value="easeInOut">Ease in-out</option>
-          <option value="pulse">Pulse (wobbles at Frequency)</option>
-          <option value="bounce">Bounce (settles in a few beats)</option>
-          <option value="sine">Sine decay</option>
-          <option value="spring">Spring</option>
-          <option value="custom">Custom</option>
-        </select>
-        <span class="subnote">Controls how shake strength changes over time.</span>
-      </div>
-    </div>
-
-    <details class="adv">
-      <summary>Advanced options (don't touch if you don't understand)</summary>
-      <p class="hint">These expose the lower-level motion math. The defaults are designed to behave sensibly.</p>
-      <div class="grid3">
-        <div class="field"><label>Exponential decay rate</label><input type="number" id="advEnvExpInput" min="0.5" max="20" step="0.5" value="4"></div>
-        <div class="field"><label>Ease power</label><input type="number" id="advEasePowerInput" min="0.5" max="8" step="0.5" value="2"></div>
-        <div class="field"><label>Bounce count</label><input type="number" id="advBounceCountInput" min="1" max="12" step="1" value="3"></div>
-        <div class="field"><label>Orbit start phase (°)</label><input type="number" id="advPhaseInput" min="-360" max="360" step="5" value="0"></div>
-        <div class="field"><label>Scatter interval (s)</label><input type="number" id="advScatterIntervalInput" min="0.02" max="1" step="0.01" value="0.1"></div>
-        <div class="field"><label>Scatter seed</label><input type="number" id="advScatterSeedInput" min="0" max="9999" step="1" value="0"></div>
-        <div class="field"><label>Mirror tile radius</label><input type="number" id="advMirrorRadiusInput" min="1" max="3" step="1" value="1"><span class="subnote">1 = 3×3 mirrored tiles, 2 = 5×5.</span></div>
-        <div class="field"><label>Re-trigger cooldown (s)</label><input type="number" id="advCooldownInput" min="0.05" max="3" step="0.01" value="0.05"><span class="subnote">0.05s prevents duplicate detections while allowing every real pattern appearance.</span></div>
-        <div class="field"><label>Detection scan rate (fps)</label><input type="number" id="advScanFpsInput" min="15" max="120" step="1" value="60"></div>
-        <div class="field"><label>Custom graph frequency (Hz)</label><input type="number" id="advCustomFreqInput" min="0.01" max="25" step="0.01" value="4"><span class="subnote">Custom graph frequency, capped at 25 Hz.</span></div>
-        <div class="field"><label>Custom graph phase (cycles)</label><input type="number" id="advCustomPhaseInput" min="-10" max="10" step="0.01" value="0"></div>
-        <div class="field"><label>Custom graph mix</label><input type="range" id="advCustomMixInput" min="0" max="1" step="0.01" value="0.5"><span class="subnote">Blend between fade and oscillation.</span></div>
-        <div class="field"><label>Orbit radius multiplier</label><input type="number" id="advRadiusMultiplierInput" min="0" max="10" step="0.05" value="1"></div>
-        <div class="field"><label>Trigger mode</label><select id="advTriggerModeInput"><option value="cooldown">0.05s cooldown</option><option value="rising">Rising-edge only</option></select><span class="subnote">Rising-edge mode triggers when the match goes from below to above threshold.</span></div>
-        <div class="field"><label>Shake centre X (%)</label><input type="number" id="advCenterXInput" min="-100" max="100" step="1" value="0"></div>
-        <div class="field"><label>Shake centre Y (%)</label><input type="number" id="advCenterYInput" min="-100" max="100" step="1" value="0"></div>
-        <div class="field"><label><input type="checkbox" id="advDebugModeInput"> Debug mode</label><span class="subnote">Shows a live per-frame diagnostics readout under Scan and logs verbosely to the browser console.</span></div>
-      </div>
-    </details>
-
-    <div class="row"><label class="btn" for="previewImgFile">Choose preview image</label><input type="file" id="previewImgFile" accept="image/*"><button class="btn primary" id="playPreviewBtn" disabled>Play shake</button></div>
-    <div style="margin-top:12px;max-width:420px;"><canvas class="stage-canvas" id="previewCanvas" width="640" height="360"></canvas></div>
-  </div>
-
-  <div class="card">
-    <h2><span class="step-mark">3</span>Detect the flash in video 1</h2>
-    <p class="hint">Upload the compressed, pattern-visible timestamp video. It scans at the selected rate and re-triggers on each pattern appearance, with a short 0.05s default duplicate guard.</p>
-    <div class="scan-warning"><strong>⚠️ Scanning can sometimes appear to freeze.</strong><br>If it takes more than about 1 minute, refresh the page and try again. It may take longer on low-end devices.</div>
-    <div class="row"><label class="btn" for="video1File">Choose video 1 (timestamp video)</label><input type="file" id="video1File" accept="video/*"><span class="file-chosen" id="video1Name"></span></div>
-    <div class="grid3">
-      <div class="field"><label>Center confidence <span class="val" id="centerThreshVal">30%</span></label><input type="range" id="centerThreshInput" min="30" max="99" step="1" value="30"></div>
-      <div class="field"><label>Full-frame confidence <span class="val" id="fullThreshVal">30%</span></label><input type="range" id="fullThreshInput" min="30" max="99" step="1" value="30"></div>
-      <div class="field"><label>Center crop size <span class="val" id="scanRatioVal">30%</span></label><input type="range" id="scanRatioInput" min="10" max="60" step="5" value="30"></div>
-    </div>
-    <div class="row"><button class="btn primary" id="scanBtn" disabled>Scan for flashes</button><button class="btn ghost" id="cancelScanBtn" style="display:none;">Cancel</button></div>
-    <div class="progress" id="scanProgressWrap" style="display:none;"><div id="scanProgressBar"></div></div>
-    <div class="status-line" id="scanStatus"></div>
-    <pre id="scanDebug" style="display:none;font-size:11px;line-height:1.5;background:#0008;border-radius:6px;padding:8px 10px;margin-top:6px;white-space:pre-wrap;overflow-x:auto;max-height:220px;overflow-y:auto;"></pre>
-    <div id="triggerTableWrap" style="display:none;"><table class="trig"><thead><tr><th>Time</th><th>Center match</th><th>Full match</th><th>Source</th><th></th></tr></thead><tbody id="triggerRows"></tbody></table></div>
-    <div class="empty-note" id="triggerEmpty">No flashes detected yet.</div>
-    <div class="row"><input type="number" id="manualTimeInput" step="0.01" placeholder="seconds" style="width:110px;background:var(--panel-2);border:1px solid var(--line);color:var(--text);padding:8px 10px;border-radius:6px;"><button class="btn ghost" id="addManualBtn">Add manual trigger</button></div>
-  </div>
-
-  <div class="card">
-    <h2><span class="step-mark">4</span>Preview and export on video 2</h2>
-    <p class="hint">Upload the full-quality original — same timeline as video 1. Preview is lightweight; export renders a real 60 FPS MP4 at the video's aspect ratio (including square 1:1) instead of recording the browser canvas.</p>
-    <div class="row"><label class="btn" for="video2File">Choose video 2 (original)</label><input type="file" id="video2File" accept="video/*"><span class="file-chosen" id="video2Name"></span></div>
-    <div style="margin-top:12px;"><canvas class="stage-canvas" id="renderCanvas" width="960" height="540"></canvas></div>
-    <div class="row"><button class="btn primary" id="playVideo2Btn" disabled>Play preview</button><button class="btn" id="pauseVideo2Btn" disabled>Pause</button><button class="btn" id="exportBtn" disabled>Export 60fps (.mp4)</button></div>
-    <div class="status-line" id="exportStatus"></div>
-    <div class="row" id="downloadRow" style="display:none;"><a class="btn primary" id="downloadLink" download="shakyyyy-60fps.mp4">Download 60fps MP4</a></div>
-    <div class="row"><button class="btn" id="downloadManifestBtn">Download shake manifest (.json)</button><button class="btn ghost" id="copyManifestBtn">Copy manifest</button></div>
-  </div>
-
-  <footer class="note">The manifest holds every trigger time plus the exact shake parameters, including the graph, jitter method, and advanced motion settings. Detection assumes the flash sits centered and fills the frame.</footer>
+<div class="notice" id="notice">
+  <div><b>The UI has changed slightly, and new shake modes have been added.</b> If you came from my TikTok video on crow.cc, the page still uses the same names and opens on the old Spiral shake, so you can follow along as before. Try the other modes under Shake shape when you're ready.</div>
+  <button class="btn solid" id="noticeOk">Got it</button>
 </div>
 
-<script>
-(function(){
-  const bar=document.getElementById('errorBar');
-  function show(kind,message,source,line,col,stack){
-    const text=String(message||'Unknown JavaScript error');
-    const loc=source?(source+(line?':'+line:'')+(col?':'+col:'')) : '';
-    bar.className='show';
-    bar.innerHTML='⛔ '+kind+': '+text+(loc?'\n<small>'+loc+'</small>':'')+(stack?'\n<small>'+String(stack).slice(0,1800)+'</small>':'');
-    console.error(kind,message,source,line,col,stack);
-  }
-  window.addEventListener('error',function(e){
-    show('JavaScript error',e.message,e.filename,e.lineno,e.colno,e.error&&e.error.stack);
-  });
-  window.addEventListener('unhandledrejection',function(e){
-    const r=e.reason; show('Unhandled promise rejection',r&&r.message?r.message:String(r),'',0,0,r&&r.stack);
-  });
-  window.__showShakyyyyError=show;
-})();
-</script>
+<div class="card">
+  <h2><span class="step-mark">1</span>Load the pattern</h2>
+  <p class="hint">Upload the pattern image and it's converted to matching data right here. Drag to mark just the flash pattern, or leave it to use the whole frame.</p>
+  <div class="row"><label class="btn solid" for="patFile">Upload pattern image</label><input type="file" id="patFile" accept="image/*"></div>
+  <div id="patArea" style="display:none" class="mt">
+    <div class="canvas-wrap"><canvas id="patView"></canvas>
+      <div class="legend"><span><i class="sw" style="background:#fff"></i>full pattern</span><span><i class="sw" style="background:#888"></i>center check</span></div>
+    </div>
+    <div class="grid mt">
+      <div class="f"><label>Full resolution <span class="v" id="pFullV"></span></label><input type="range" id="pFull" min="4" max="128" step="1" value="32" data-u="n"></div>
+      <div class="f"><label>Center resolution <span class="v" id="pCenterV"></span></label><input type="range" id="pCenter" min="2" max="64" step="1" value="8" data-u="n"></div>
+      <div class="f"><label>Center crop size <span class="v" id="pRatioV"></span></label><input type="range" id="pRatio" min="10" max="60" step="5" value="30" data-u="pct"></div>
+    </div>
+    <div class="row"><button class="btn" id="patWhole">Use whole image</button><button class="btn solid" id="patExtract">Extract &amp; use pattern</button></div>
+  </div>
+  <p class="sm mt">Already have pattern JSON from before? Paste or upload it instead.</p>
+  <div class="row"><label class="btn" for="patJson">Upload pattern JSON</label><input type="file" id="patJson" accept=".json,application/json"><span class="sm" id="patJsonName"></span></div>
+  <textarea id="patPaste" class="mt" placeholder="...or paste pattern JSON here"></textarea>
+  <div class="row"><button class="btn" id="patUse">Use this pattern</button></div>
+  <div class="msg" id="msgPat"></div>
+</div>
+
+<div class="card">
+  <h2><span class="step-mark">2</span>Shake shape</h2>
+  <p class="hint">Tune the shake and preview it looping on a still image. Magnitude controls how far it swings; Rotation is the number of laps around the orbit point. Only the sliders that matter for the chosen mode are shown.</p>
+  <div class="grid">
+    <div class="f"><label>Shake mode</label>
+      <select id="style">
+        <option value="spiral" selected>Spiral (Alight Motion style)</option>
+        <option value="jitter">Jitter (CapCut style)</option>
+        <option value="punch">Punch zoom</option>
+        <option value="swing">Damped swing</option>
+        <option value="heart">Heartbeat</option>
+        <option value="rumble">Rumble</option>
+        <option value="wobble">Rotation wobble</option>
+        <option value="buzz">Buzz</option>
+      </select><small id="styleDesc"></small></div>
+    <div class="f"><label>Duration <span class="v" id="durV"></span></label><input type="range" id="dur" min="0.1" max="2" step="0.05" value="0.5" data-u="s"><small>Longer shakes keep the same size and fade more slowly.</small></div>
+    <div class="f" data-m="jitter,rumble,buzz" data-g="pulse,spring,custom" data-or="1"><label>Speed <span class="v" id="freqV"></span></label><input type="range" id="freq" min="0.5" max="25" step="0.1" value="4" data-u="spd"><small>Jitter: spots per second. Pulse, Spring and Custom graphs wobble at this speed. Rumble and Buzz: tremor speed.</small></div>
+    <div class="f" data-m="spiral,swing,wobble"><label>Rotation <span class="v" id="lapsV"></span></label><input type="range" id="laps" min="0" max="10" step="0.1" value="3" data-u="laps"><small>How many times it laps around the orbit point.</small></div>
+    <div class="f"><label>Magnitude <span class="v" id="magV"></span></label><input type="range" id="mag" min="0" max="50" step="1" value="15" data-u="pct"><small>How far out the orbit swings, as a share of the frame width. 15% is the old default.</small></div>
+    <div class="f" data-m="spiral"><label>Scatter <span class="v" id="scatterV"></span></label><input type="range" id="scatter" min="0" max="100" step="1" value="10" data-u="px"><small>Adds a new slight random destination offset every 0.1s.</small></div>
+    <div class="f" data-m="spiral,jitter"><label>Jitter method</label><select id="jm"><option value="smooth" selected>Smooth</option><option value="step">Step</option></select><small>Smooth glides into each new spot. Step jumps straight to it.</small></div>
+    <div class="f" data-m="spiral,swing,wobble"><label>Direction</label><select id="dir"><option value="1" selected>Clockwise</option><option value="-1">Counter-clockwise</option></select></div>
+    <div class="f" data-m="spiral,jitter,rumble,buzz"><label>Axis</label><select id="axis"><option value="both" selected>Both</option><option value="x">Left and right only</option><option value="y">Up and down only</option></select></div>
+    <div class="f"><label>Graph</label>
+      <select id="graph">
+        <option value="linear">Linear</option>
+        <option value="exponential">Exponential (snappier)</option>
+        <option value="easeOut">Ease out (soft tail)</option>
+        <option value="easeIn">Ease in (slow start)</option>
+        <option value="easeInOut">Ease in-out</option>
+        <option value="pulse">Pulse (wobbles at Speed)</option>
+        <option value="bounce">Bounce (settles in a few beats)</option>
+        <option value="sine">Sine decay</option>
+        <option value="spring">Spring</option>
+        <option value="custom">Custom</option>
+      </select><small>Controls how the shake strength changes over time.</small></div>
+    <div class="f"><label>Flash at start <input type="checkbox" id="flashOn" style="width:18px;height:18px;accent-color:#fff"></label>
+      <input type="range" id="flash" min="-20" max="50" step="1" value="20">
+      <input type="number" id="flashNum" min="-20" max="50" step="1" value="20">
+      <small>Brightens the start of each shake (%), then fades. Slider runs -20 to 50. Type any number in the box.</small></div>
+  </div>
+  <details><summary>Advanced options (don't touch if you don't understand)</summary>
+    <p class="sm">These expose the lower-level motion math. Options that don't apply to the current mode or graph are hidden.</p>
+    <div class="grid mt">
+      <div class="f" data-g="exponential"><label>Exponential decay rate</label><input type="number" id="envExp" min="0.5" max="20" step="0.5" value="4"></div>
+      <div class="f" data-g="easeOut,easeIn,easeInOut"><label>Ease power</label><input type="number" id="easePow" min="0.5" max="8" step="0.5" value="2"></div>
+      <div class="f" data-g="bounce"><label>Bounce count</label><input type="number" id="bounceN" min="1" max="12" step="1" value="3"></div>
+      <div class="f" data-m="spiral,swing,wobble"><label>Orbit start phase (°)</label><input type="number" id="phase" min="-360" max="360" step="5" value="0"></div>
+      <div class="f" data-m="spiral"><label>Scatter interval (s)</label><input type="number" id="sInt" min="0.02" max="1" step="0.01" value="0.1"></div>
+      <div class="f" data-m="spiral,jitter,rumble"><label>Scatter seed</label><input type="number" id="seed" min="0" max="9999" step="1" value="0"></div>
+      <div class="f"><label>Mirror tile radius</label><input type="number" id="mirror" min="1" max="3" step="1" value="1"><small>1 = 3×3 mirrored tiles fill the edges, 2 = 5×5.</small></div>
+      <div class="f"><label>Re-trigger cooldown (s)</label><input type="number" id="cool" min="0.05" max="3" step="0.01" value="0.3"><small>Minimum gap between two detected flashes.</small></div>
+      <div class="f" data-g="custom"><label>Custom graph frequency (Hz)</label><input type="number" id="cFreq" min="0.01" max="25" step="0.01" value="4"></div>
+      <div class="f" data-g="custom"><label>Custom graph phase (cycles)</label><input type="number" id="cPhase" min="-10" max="10" step="0.01" value="0"></div>
+      <div class="f" data-g="custom"><label>Custom graph mix <span class="v" id="mixV"></span></label><input type="range" id="mix" min="0" max="1" step="0.01" value="0.5" data-u="d2"></div>
+      <div class="f"><label>Orbit radius multiplier</label><input type="number" id="radMult" min="0" max="10" step="0.05" value="1"></div>
+      <div class="f"><label>Attack <span class="v" id="atkV"></span></label><input type="range" id="atk" min="0" max="200" step="5" value="0" data-u="ms"><small>How early the shake starts. It begins this many ms before the flash and peaks right on it.</small></div>
+      <div class="f"><label>Shake centre X (%)</label><input type="number" id="cx" min="-100" max="100" step="1" value="0"></div>
+      <div class="f"><label>Shake centre Y (%)</label><input type="number" id="cy" min="-100" max="100" step="1" value="0"></div>
+    </div>
+  </details>
+  <div class="row"><label class="btn" for="prevFile">Choose preview image</label><input type="file" id="prevFile" accept="image/*"><button class="btn solid" id="playPrev" disabled>Play shake</button></div>
+  <canvas id="prevCanvas" width="640" height="360" style="max-width:420px;margin-top:14px"></canvas>
+</div>
+
+<div class="card">
+  <h2><span class="step-mark">3</span>Detect the flash in video 1</h2>
+  <p class="hint"><b>Video 1 is the compressed clip where the flash is clearly visible.</b> Scanning plays it at normal speed, so a 2-minute clip takes about 2 minutes. Keep this tab open and in front.</p>
+  <div class="row"><label class="btn solid" for="v1File">Choose video 1 (timestamp video)</label><input type="file" id="v1File" accept="video/*"><span class="sm" id="v1Name"></span></div>
+  <div class="grid mt">
+    <div class="f"><label>Center confidence <span class="v" id="cThrV"></span></label><input type="range" id="cThr" min="40" max="99" step="1" value="75" data-u="pct"><small>Lower finds more flashes. Try 65% if none are found.</small></div>
+    <div class="f"><label>Full-frame confidence <span class="v" id="fThrV"></span></label><input type="range" id="fThr" min="40" max="99" step="1" value="70" data-u="pct"></div>
+    <div class="f"><label>Center crop size <span class="v" id="cRatioV"></span></label><input type="range" id="cRatio" min="10" max="60" step="5" value="30" data-u="pct"></div>
+  </div>
+  <div class="row"><button class="btn solid" id="scanBtn" disabled>Scan for flashes</button><button class="btn" id="cancelBtn" style="display:none">Cancel</button></div>
+  <div class="bar" id="bar"><div id="barFill"></div></div>
+  <div class="status" id="scanStatus"></div>
+  <div class="msg" id="msgScan"></div>
+  <table id="tbl"><thead><tr><th>Time</th><th>Center match</th><th>Full match</th><th>Source</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+  <div class="empty" id="empty">No flashes detected yet.</div>
+  <div class="row"><input type="number" id="manT" step="0.01" placeholder="seconds" style="width:140px"><button class="btn" id="addMan">Add manual trigger</button></div>
+</div>
+
+<div class="card">
+  <h2><span class="step-mark">4</span>Preview and export on video 2</h2>
+  <p class="hint">Upload the full-quality original, on the same timeline as video 1. Preview is lightweight. Export renders a real 60 FPS MP4 at the video's own shape, including square.</p>
+  <div class="row"><label class="btn solid" for="v2File">Choose video 2 (original)</label><input type="file" id="v2File" accept="video/*"><span class="sm" id="v2Name"></span></div>
+  <canvas id="renderCanvas" class="mt" width="1280" height="720"></canvas>
+  <div class="row"><button class="btn solid" id="playBtn" disabled>Play preview</button><button class="btn" id="pauseBtn" disabled>Pause</button><button class="btn" id="exportBtn" disabled>Export 60fps (.mp4)</button></div>
+  <div class="status" id="expStatus"></div>
+  <div class="msg" id="msgExp"></div>
+  <div class="row" id="dlRow" style="display:none"><a class="btn solid" id="dl" download="shakyyyy.mp4">Download 60fps MP4</a></div>
+  <div class="row"><button class="btn" id="manifestBtn">Download shake manifest (.json)</button><button class="btn" id="copyBtn">Copy manifest</button></div>
+  <p class="sm mt">The manifest holds every trigger time plus the exact shake settings. Detection assumes the flash sits centred and fills the frame.</p>
+</div>
+</div>
+<div id="err"></div>
+
 <script type="module">
-  import * as Mediabunny from "https://cdn.jsdelivr.net/npm/mediabunny@1.55.1/dist/bundles/mediabunny.min.mjs";
-  window.Mediabunny = Mediabunny;
-  window.dispatchEvent(new Event("mediabunnyready"));
+import * as MB from "https://cdn.jsdelivr.net/npm/mediabunny@1.55.1/dist/bundles/mediabunny.min.mjs";
+window.Mediabunny = MB;
 </script>
 <script>
-(function(){
-  function $(id){return document.getElementById(id);}
-  function clamp(v,a,b){return Math.min(Math.max(v,a),b);}
-  function downloadJSON(obj,filename){const blob=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);}
-  function copyText(str,onOk,onFail){if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(str).then(onOk,onFail);else{const ta=document.createElement('textarea');ta.value=str;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');onOk();}catch(e){onFail();}document.body.removeChild(ta);}}
-  function fmtTime(t){const m=Math.floor(t/60),s=(t-m*60).toFixed(2);return m>0?m+':'+s.padStart(5,'0'):t.toFixed(2)+'s';}
+(()=>{
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.min(Math.max(v,a),b);
+const smooth=x=>x*x*(3-2*x);
+const TAU=Math.PI*2;
+const mk=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
+const HDR=matchMedia('(dynamic-range: high)').matches;
+const EXT=HDR&&CSS.supports('color','color(srgb 1.5 1.5 1.5)');
+window.onerror=(m,s,l)=>{const b=$('err');b.textContent='Something went wrong: '+m+' (line '+l+'). Refresh the page and try again.';b.style.display='block';};
+$('noticeOk').onclick=()=>{$('notice').style.display='none';};
 
-  function envelopeValue(progress,elapsed,p){
-    const q=clamp(progress,0,1), freq=Math.min(25,Math.max(.01,p.freq));
-    switch(p.graph){
-      case 'exponential': return Math.exp(-p.envExp*q);
-      case 'easeOut': return Math.pow(1-q,p.easePower);
-      case 'easeIn': return 1-Math.pow(q,p.easePower);
-      case 'easeInOut': return .5*(1+Math.cos(Math.PI*q));
-      case 'pulse': return clamp(Math.abs(Math.cos(2*Math.PI*freq*elapsed))* (1-q),0,1);
-      case 'bounce': return clamp(Math.abs(Math.sin(Math.PI*p.bounceCount*(1-q)))*(1-q),0,1);
-      case 'sine': return clamp(Math.sin(Math.PI*(1-q)/2),0,1);
-      case 'spring': return clamp((1-q)*(0.5+0.5*Math.cos(2*Math.PI*freq*elapsed))*2,0,1);
-      case 'custom':{
-        const wave=.5+.5*Math.cos(2*Math.PI*freq*elapsed+p.customPhase*2*Math.PI);
-        return clamp((1-p.customMix)*(1-q)+p.customMix*wave*(1-q),0,1);
-      }
-      default:return 1-q;
-    }
-  }
+const UNIT={spd:v=>(+v).toFixed(1),n:v=>String(Math.round(v)),pct:v=>Math.round(v)+'%',s:v=>(+v).toFixed(2)+'s',hz:v=>(+v).toFixed(1)+' Hz',laps:v=>(+v).toFixed(1)+' laps',ms:v=>Math.round(v)+' ms',px:v=>Math.round(v)+' px',d2:v=>(+v).toFixed(2)};
+const STYLE_DESC={spiral:'A swirling circle that shrinks away, with a little random scatter.',jitter:'Glides to a spot, then picks the next one as it arrives. Loosely circular.',punch:'A quick zoom that snaps back.',swing:'Back-and-forth swing along one line, fading out.',heart:'Two thumps, like a heartbeat.',rumble:'Slow, heavy wobble, like an earthquake.',wobble:'Tilts left and right, like a rocking boat.',buzz:'A fast, tiny tremor, like a phone buzzing.'};
+// Starting values for each mode. Switching modes loads these.
+const PRESET={
+  spiral:{dur:.5,mag:15,freq:4,laps:3,scatter:10,dir:'1',graph:'linear',atk:0,jm:'smooth',axis:'both'},
+  jitter:{dur:.65,mag:40,freq:25,graph:'easeOut',atk:0,jm:'smooth',axis:'both'},
+  punch:{dur:.4,mag:50,graph:'easeOut',atk:30,axis:'both'},
+  swing:{dur:.5,mag:15,laps:3,graph:'easeOut',atk:30,dir:'1'},
+  heart:{dur:.5,mag:15,graph:'easeOut',atk:30},
+  rumble:{dur:.6,mag:50,freq:9.7,graph:'easeOut',atk:30,axis:'both'},
+  wobble:{dur:.5,mag:15,laps:3,graph:'easeOut',atk:30,dir:'1'},
+  buzz:{dur:.5,mag:35,freq:2.9,graph:'easeOut',atk:105,axis:'both'}
+};
 
-  function computeOrbit(elapsed,p){
-    const progress=clamp(elapsed/p.duration,0,1);
-    const env=envelopeValue(progress,elapsed,p);
-    const maxRadius=p.magnitude*4*p.radiusMultiplier;
-    const radius=maxRadius*env;
-    const angle=p.rotationDirection*(2*Math.PI*p.laps*progress)+(p.phaseDeg*Math.PI/180);
-    return{x:radius*Math.cos(angle),y:radius*Math.sin(angle)};
-  }
+function glow(t){if(EXT){const v=(0.42+1.6*t).toFixed(3);return `color(srgb ${v} ${v} ${v})`;}const c=Math.round(105+150*t);return `rgb(${c},${c},${c})`;}
+function paint(el){
+  const lo=+el.min,hi=+el.max,t=clamp((+el.value-lo)/((hi-lo)||1),0,1);
+  if(el.type==='number'){el.style.color=glow(t);return;}
+  const o=$(el.id+'V');
+  if(o){o.textContent=UNIT[el.dataset.u||'n'](el.value);o.style.color=glow(t);}
+}
+const N=id=>+$(id).value;
+function setRange(id,v){const el=$(id);el.value=v;paint(el);}
+function msg(id,html,bad){const m=$(id);m.innerHTML=html;m.className='msg show'+(bad?' bad':'');}
+function hideMsg(id){$(id).className='msg';}
 
-  function scatterHash(n,seed){const s=Math.sin(n*12.9898+seed*78.233)*43758.5453;return s-Math.floor(s);}
-  function scatterPoint(step,p){
-    const r1=scatterHash(step*2,p.scatterSeed),r2=scatterHash(step*2+1,p.scatterSeed);
-    const angle=r1*2*Math.PI,mag=r2*p.scatterAmount;
-    return{x:mag*Math.cos(angle),y:mag*Math.sin(angle)};
-  }
-  function computeScatter(elapsed,p){
-    // Always evaluate the scatter clock, even at 0 px.
-    // During the final scatter interval, hold the last scatter point and
-    // smoothly blend it back to exactly 0,0 so the shake ends seamlessly.
-    const interval=p.scatterInterval>0?p.scatterInterval:.1;
-    const duration=Math.max(0,p.duration||0);
-    const fadeStart=Math.max(0,duration-interval);
-
-    if(duration>0 && elapsed>=fadeStart){
-      const fadeProgress=clamp((elapsed-fadeStart)/Math.max(.0001,duration-fadeStart),0,1);
-      const lastStep=Math.floor(fadeStart/interval);
-      const last=scatterPoint(lastStep,p);
-      const e=fadeProgress*fadeProgress*(3-2*fadeProgress);
-      return{x:last.x*(1-e),y:last.y*(1-e)};
-    }
-
-    const step=Math.floor(Math.max(0,elapsed)/interval);
-    if(p.scatterMode==='smooth'){
-      const a=scatterPoint(step,p),b=scatterPoint(step+1,p),f=(elapsed-step*interval)/interval;
-      const e=f*f*(3-2*f);
-      return{x:a.x+(b.x-a.x)*e,y:a.y+(b.y-a.y)*e};
-    }
-    return scatterPoint(step,p);
-  }
-  function computeShake(elapsed,p){
-    const orb=computeOrbit(elapsed,p),sc=computeScatter(elapsed,p);
-    return{offsetX:orb.x+sc.x+wCenterX(p),offsetY:orb.y+sc.y+wCenterY(p)};
-  }
-  function wCenterX(p){return (p.centerXPercent/100)*p.renderWidth;}
-  function wCenterY(p){return (p.centerYPercent/100)*p.renderHeight;}
-
-  function buildMirrorMosaic(source,w,h,R){
-    const tiles=2*R+1,big=document.createElement('canvas');big.width=w*tiles;big.height=h*tiles;const bctx=big.getContext('2d');
-    for(let ty=-R;ty<=R;ty++)for(let tx=-R;tx<=R;tx++){bctx.save();bctx.translate((tx+R)*w+w/2,(ty+R)*h+h/2);bctx.scale(Math.abs(tx)%2===1?-1:1,Math.abs(ty)%2===1?-1:1);try{bctx.drawImage(source,-w/2,-h/2,w,h);}catch(e){}bctx.restore();}
-    return big;
-  }
-
-  // Cache the mirror mosaic for BOTH images and videos. Rebuilding the mosaic
-  // for every video frame was causing the main thread to get saturated, which
-  // made sliders, file pickers and buttons appear frozen.
-  const imageMosaicCache=new WeakMap();
-  function getMirrorMosaic(source,w,h,R){
-    // Images are static, so they can safely use the WeakMap cache.
-    // Videos AND canvases are NOT static: caching by reference would freeze
-    // the mosaic at whichever frame was rendered first. This matters for the
-    // export path, which draws each new frame onto one reused frameCanvas
-    // and passes that same canvas in as `source` — without this check, the
-    // WeakMap cache locked onto that canvas object and replayed the very
-    // first shake frame it ever saw for every shake for the rest of the
-    // export, instead of the current frame. A video/canvas frame is instead
-    // mosaiced fresh once per render.
-    if(source instanceof HTMLVideoElement || source instanceof HTMLCanvasElement){
-      return buildMirrorMosaic(source,w,h,R);
-    }
-    if(source && (typeof source==='object'||typeof source==='function')){
-      const c=imageMosaicCache.get(source);
-      if(c&&c.w===w&&c.h===h&&c.R===R)return c.mosaic;
-      const mosaic=buildMirrorMosaic(source,w,h,R);
-      imageMosaicCache.set(source,{w,h,R,mosaic});
-      return mosaic;
-    }
-    return buildMirrorMosaic(source,w,h,R);
-  }
-
-  function renderShakeToCanvas(ctx,source,w,h,elapsed,p){
-    p.renderWidth=w;p.renderHeight=h;
-    if(elapsed<0){ctx.clearRect(0,0,w,h);try{ctx.drawImage(source,0,0,w,h);}catch(e){}return;}
-    const R=Math.max(1,Math.round(p.mirrorRadius||1)),tiles=2*R+1;
-    const mosaic=getMirrorMosaic(source,w,h,R);
-    const drawAt=(o,alpha)=>{
-      ctx.globalAlpha=alpha;
-      ctx.save();
-      ctx.translate(w/2+o.offsetX,h/2+o.offsetY);
-      ctx.drawImage(mosaic,-(R+.5)*w,-(R+.5)*h,tiles*w,tiles*h);
-      ctx.restore();
-    };
-    ctx.clearRect(0,0,w,h);
-    const current=computeShake(elapsed,p);
-    drawAt(current,1);
-    ctx.globalAlpha=1;
-  }
-
-  function readShakeParams(){
-    return{
-      duration:parseFloat($('durInput').value),freq:parseFloat($('freqInput').value),laps:parseFloat($('rotInput').value),
-      magnitude:parseFloat($('zoomInput').value),scatterAmount:parseFloat($('scatterInput').value),
-      graph:$('graphInput').value,envExp:parseFloat($('advEnvExpInput').value),easePower:parseFloat($('advEasePowerInput').value),
-      bounceCount:parseFloat($('advBounceCountInput').value),phaseDeg:parseFloat($('advPhaseInput').value),
-      scatterInterval:parseFloat($('advScatterIntervalInput').value),scatterSeed:parseFloat($('advScatterSeedInput').value),
-      mirrorRadius:parseFloat($('advMirrorRadiusInput').value),cooldown:Math.max(.05,parseFloat($('advCooldownInput').value)),
-      scanFps:parseFloat($('advScanFpsInput').value),customFreq:Math.min(25,parseFloat($('advCustomFreqInput').value)),
-      customPhase:parseFloat($('advCustomPhaseInput').value),customMix:parseFloat($('advCustomMixInput').value),
-      radiusMultiplier:parseFloat($('advRadiusMultiplierInput').value),rotationDirection:parseFloat($('rotationDirectionInput').value),
-      scatterMode:$('advScatterModeInput').value,triggerMode:$('advTriggerModeInput').value,
-      centerXPercent:parseFloat($('advCenterXInput').value),centerYPercent:parseFloat($('advCenterYInput').value)
-    };
-  }
-
-  function bindRange(i,v,f){const el=$(i);el.addEventListener('input',()=>$(v).textContent=f(el.value));}
-  bindRange('durInput','durVal',v=>parseFloat(v).toFixed(2)+'s');bindRange('freqInput','freqVal',v=>parseFloat(v).toFixed(1)+' Hz');
-  bindRange('rotInput','rotVal',v=>parseFloat(v).toFixed(1)+' laps');bindRange('zoomInput','zoomVal',v=>Math.round(v)+'%');
-  bindRange('scatterInput','scatterVal',v=>Math.round(v)+' px');
-  bindRange('centerThreshInput','centerThreshVal',v=>Math.round(v)+'%');bindRange('fullThreshInput','fullThreshVal',v=>Math.round(v)+'%');bindRange('scanRatioInput','scanRatioVal',v=>Math.round(v)+'%');
-  bindRange('advCustomMixInput','advCustomMixVal',v=>parseFloat(v).toFixed(2));
-  // Keep displayed values live without relying on the renderer.
-  document.querySelectorAll('input[type=range]').forEach(el=>el.addEventListener('input',()=>{
-    const map={durInput:['durVal',v=>parseFloat(v).toFixed(2)+'s'],freqInput:['freqVal',v=>parseFloat(v).toFixed(1)+' Hz'],rotInput:['rotVal',v=>parseFloat(v).toFixed(1)+' laps'],zoomInput:['zoomVal',v=>Math.round(v)+'%'],scatterInput:['scatterVal',v=>Math.round(v)+' px'],centerThreshInput:['centerThreshVal',v=>Math.round(v)+'%'],fullThreshInput:['fullThreshVal',v=>Math.round(v)+'%'],scanRatioInput:['scanRatioVal',v=>Math.round(v)+'%'],advCustomMixInput:['advCustomMixVal',v=>parseFloat(v).toFixed(2)]};
-    const m=map[el.id]; if(m) $(m[0]).textContent=m[1](el.value);
-  }));
-
-  let pattern=null;
-  function setStatus(id,msg,cls){const el=$(id);el.textContent=msg||'';el.className='status-line'+(cls?' '+cls:'');}
-  function renderPatternSummary(){ $('patternSummary').style.display='flex';const sw=$('patternSwatch'),sctx=sw.getContext('2d'),avg=pattern.full.averageRGB||[40,40,40];sctx.fillStyle='rgb('+avg[0]+','+avg[1]+','+avg[2]+')';sctx.fillRect(0,0,44,44);$('patternMetaText').innerHTML='<b>full:</b> '+pattern.full.width+'×'+pattern.full.height+' samples &nbsp; <b>center:</b> '+pattern.center.width+'×'+pattern.center.height+' samples<br>'+(pattern.meta?'<b>source:</b> '+pattern.meta.sourceWidth+'×'+pattern.meta.sourceHeight:'');}
-  const MAX_SCAN_DIM=32; // scanning always compares at (at most) this resolution, no matter what the pattern JSON was captured at
-  function resizePatternPatch(patch,maxDim){
-    if(!patch||!Array.isArray(patch.pixels)||!patch.width||!patch.height)return patch;
-    if(patch.width<=maxDim&&patch.height<=maxDim)return patch;
-    const aspect=patch.width/patch.height;
-    let outW,outH;
-    if(aspect>=1){outW=maxDim;outH=Math.max(1,Math.round(maxDim/aspect));}
-    else{outH=maxDim;outW=Math.max(1,Math.round(maxDim*aspect));}
-    // Rebuild the stored pixel triples into a real canvas, then let the
-    // canvas do a proper high-quality downscale (matches how patterns are
-    // captured in samplePatch) to the capped size.
-    const src=document.createElement('canvas');src.width=patch.width;src.height=patch.height;
-    const sctx=src.getContext('2d');
-    const imgData=sctx.createImageData(patch.width,patch.height);
-    for(let i=0,p=0;i<patch.pixels.length;i++,p+=4){
-      imgData.data[p]=patch.pixels[i][0];imgData.data[p+1]=patch.pixels[i][1];imgData.data[p+2]=patch.pixels[i][2];imgData.data[p+3]=255;
-    }
-    sctx.putImageData(imgData,0,0);
-    const out=document.createElement('canvas');out.width=outW;out.height=outH;
-    const octx=out.getContext('2d',{willReadFrequently:true});
-    octx.imageSmoothingEnabled=true;octx.imageSmoothingQuality='high';
-    octx.drawImage(src,0,0,outW,outH);
-    const data=octx.getImageData(0,0,outW,outH).data,pixels=[];
-    let rs=0,gs=0,bs=0;
-    for(let i=0;i<data.length;i+=4){pixels.push([data[i],data[i+1],data[i+2]]);rs+=data[i];gs+=data[i+1];bs+=data[i+2];}
-    const n=pixels.length||1;
-    return{width:outW,height:outH,pixels,averageRGB:[Math.round(rs/n),Math.round(gs/n),Math.round(bs/n)]};
-  }
-  function usePattern(parsed){if(!parsed||!parsed.full||!parsed.center||!Array.isArray(parsed.full.pixels)||!Array.isArray(parsed.center.pixels)){setStatus('patternStatus',"That doesn't have the expected full/center pixel data.",'warn');return;}const cappedFull=resizePatternPatch(parsed.full,MAX_SCAN_DIM),cappedCenter=resizePatternPatch(parsed.center,MAX_SCAN_DIM),wasResized=cappedFull!==parsed.full||cappedCenter!==parsed.center;pattern={...parsed,full:cappedFull,center:cappedCenter};if(pattern.meta&&pattern.meta.centerRatio){$('scanRatioInput').value=Math.round(pattern.meta.centerRatio*100);$('scanRatioVal').textContent=Math.round(pattern.meta.centerRatio*100)+'%';}renderPatternSummary();setStatus('patternStatus',wasResized?`Pattern loaded (downscaled to ${MAX_SCAN_DIM}px max for fast scanning).`:'Pattern loaded.','ok');$('scanBtn').disabled=!video1Ready;}
-
-  $('patternFile').addEventListener('change',function(){const f=this.files&&this.files[0];if(!f)return;$('patternFileName').textContent=f.name;const r=new FileReader();r.onload=()=>{$('patternPaste').value=r.result;};r.readAsText(f);});
-  $('loadPatternBtn').addEventListener('click',function(){const raw=$('patternPaste').value.trim();if(!raw){setStatus('patternStatus','Paste or upload pattern JSON first.','warn');return;}try{usePattern(JSON.parse(raw));}catch(e){setStatus('patternStatus',"That doesn't look like valid JSON.",'warn');}});
-
-  let pImg=null,pNaturalW=0,pNaturalH=0,pSelection=null,pDragging=false,pDragStart=null;
-  function sizePatternCanvas(){const cvs=$('patternViewCanvas'),maxW=Math.min(640,(cvs.parentElement&&cvs.parentElement.clientWidth)||640),maxH=480,scale=Math.min(maxW/pNaturalW,maxH/pNaturalH,1);cvs.width=Math.max(1,Math.round(pNaturalW*scale));cvs.height=Math.max(1,Math.round(pNaturalH*scale));}
-  function getPatternCenterRect(sel){const ratio=parseInt($('pCenterRatio').value,10)/100,cw=Math.max(sel.w*ratio,2),ch=Math.max(sel.h*ratio,2);return{x:sel.x+(sel.w-cw)/2,y:sel.y+(sel.h-ch)/2,w:cw,h:ch};}
-  function drawPatternCanvas(){if(!pImg)return;const cvs=$('patternViewCanvas'),ctx=cvs.getContext('2d');ctx.clearRect(0,0,cvs.width,cvs.height);ctx.drawImage(pImg,0,0,cvs.width,cvs.height);if(pSelection){ctx.lineWidth=2;ctx.strokeStyle='#ff4d6d';ctx.strokeRect(pSelection.x+1,pSelection.y+1,Math.max(pSelection.w-2,0),Math.max(pSelection.h-2,0));const c=getPatternCenterRect(pSelection);ctx.setLineDash([5,4]);ctx.lineWidth=1.5;ctx.strokeStyle='#4cc9f0';ctx.strokeRect(c.x,c.y,c.w,c.h);ctx.setLineDash([]);}}
-  $('patternImageFile').addEventListener('change',function(){const f=this.files&&this.files[0];if(!f)return;const url=URL.createObjectURL(f),im=new Image();im.onload=()=>{pImg=im;pNaturalW=im.naturalWidth;pNaturalH=im.naturalHeight;sizePatternCanvas();const cvs=$('patternViewCanvas');pSelection={x:0,y:0,w:cvs.width,h:cvs.height};$('patternCropWrap').style.display='block';drawPatternCanvas();setStatus('patternStatus','Image loaded — drag on it to mark the pattern, then extract.');URL.revokeObjectURL(url);};im.onerror=()=>setStatus('patternStatus',"Couldn't read that image.",'warn');im.src=url;});
-  function pCanvasPoint(e){const cvs=$('patternViewCanvas'),rect=cvs.getBoundingClientRect(),sx=cvs.width/rect.width,sy=cvs.height/rect.height,cx=e.touches?e.touches[0].clientX:e.clientX,cy=e.touches?e.touches[0].clientY:e.clientY;return{x:clamp((cx-rect.left)*sx,0,cvs.width),y:clamp((cy-rect.top)*sy,0,cvs.height)};}
-  $('patternViewCanvas').addEventListener('pointerdown',function(e){if(!pImg)return;pDragging=true;pDragStart=pCanvasPoint(e);this.setPointerCapture(e.pointerId);});
-  $('patternViewCanvas').addEventListener('pointermove',function(e){if(!pDragging)return;const p=pCanvasPoint(e);pSelection={x:Math.min(pDragStart.x,p.x),y:Math.min(pDragStart.y,p.y),w:Math.abs(p.x-pDragStart.x),h:Math.abs(p.y-pDragStart.y)};drawPatternCanvas();});
-  function endPDrag(){if(!pDragging)return;pDragging=false;if(pSelection&&(pSelection.w<6||pSelection.h<6)){const cvs=$('patternViewCanvas');pSelection={x:0,y:0,w:cvs.width,h:cvs.height};}drawPatternCanvas();}
-  $('patternViewCanvas').addEventListener('pointerup',endPDrag);$('patternViewCanvas').addEventListener('pointercancel',endPDrag);
-  $('pCenterRatio').addEventListener('input',function(){$('pCenterRatioVal').textContent=this.value+'%';drawPatternCanvas();});$('pFullRes').addEventListener('input',function(){$('pFullResVal').textContent=this.value;});$('pCenterRes').addEventListener('input',function(){$('pCenterResVal').textContent=this.value;});
-  $('pWholeBtn').addEventListener('click',function(){if(!pImg)return;const cvs=$('patternViewCanvas');pSelection={x:0,y:0,w:cvs.width,h:cvs.height};drawPatternCanvas();});
-  window.addEventListener('resize',function(){if(!pImg)return;const cvs=$('patternViewCanvas'),oldW=cvs.width,oldH=cvs.height;sizePatternCanvas();if(pSelection&&oldW&&oldH){const sx=cvs.width/oldW,sy=cvs.height/oldH;pSelection={x:pSelection.x*sx,y:pSelection.y*sy,w:pSelection.w*sx,h:pSelection.h*sy};}drawPatternCanvas();});
-  function samplePatch(naturalRect,targetLong){const aspect=naturalRect.w/naturalRect.h;let outW,outH;if(aspect>=1){outW=Math.max(1,Math.round(targetLong));outH=Math.max(1,Math.round(targetLong/aspect));}else{outH=Math.max(1,Math.round(targetLong));outW=Math.max(1,Math.round(targetLong*aspect));}const off=document.createElement('canvas');off.width=outW;off.height=outH;const octx=off.getContext('2d');octx.imageSmoothingEnabled=true;octx.imageSmoothingQuality='high';octx.drawImage(pImg,naturalRect.x,naturalRect.y,naturalRect.w,naturalRect.h,0,0,outW,outH);const data=octx.getImageData(0,0,outW,outH).data,pixels=[];let rs=0,gs=0,bs=0;for(let i=0;i<data.length;i+=4){pixels.push([data[i],data[i+1],data[i+2]]);rs+=data[i];gs+=data[i+1];bs+=data[i+2];}const n=pixels.length||1;return{width:outW,height:outH,pixels,averageRGB:[Math.round(rs/n),Math.round(gs/n),Math.round(bs/n)]};}
-  $('extractPatternBtn').addEventListener('click',function(){if(!pImg||!pSelection){setStatus('patternStatus','Upload a pattern image first.','warn');return;}const cvs=$('patternViewCanvas'),s=pNaturalW/cvs.width,selNatural={x:pSelection.x*s,y:pSelection.y*s,w:Math.max(pSelection.w*s,1),h:Math.max(pSelection.h*s,1)},centerDisplay=getPatternCenterRect(pSelection),centerNatural={x:centerDisplay.x*s,y:centerDisplay.y*s,w:Math.max(centerDisplay.w*s,1),h:Math.max(centerDisplay.h*s,1)},full=samplePatch(selNatural,parseInt($('pFullRes').value,10)||32),center=samplePatch(centerNatural,parseInt($('pCenterRes').value,10)||8),built={meta:{sourceWidth:pNaturalW,sourceHeight:pNaturalH,selection:{x:Math.round(selNatural.x),y:Math.round(selNatural.y),w:Math.round(selNatural.w),h:Math.round(selNatural.h)},centerRatio:parseInt($('pCenterRatio').value,10)/100,generatedAt:new Date().toISOString()},center,full};$('patternPaste').value=JSON.stringify(built,null,2);usePattern(built);});
-
-  let previewImg=null,previewRAF=null,previewStartTime=null;
-  $('previewImgFile').addEventListener('change',function(){const f=this.files&&this.files[0];if(!f)return;const url=URL.createObjectURL(f),im=new Image();im.onload=()=>{previewImg=im;const cvs=$('previewCanvas'),scale=Math.min(640/im.naturalWidth,1);cvs.width=Math.round(im.naturalWidth*scale);cvs.height=Math.round(im.naturalHeight*scale);cvs.getContext('2d').drawImage(im,0,0,cvs.width,cvs.height);$('playPreviewBtn').disabled=false;URL.revokeObjectURL(url);};im.src=url;});
-  $('playPreviewBtn').addEventListener('click',function(){if(!previewImg)return;if(previewRAF)cancelAnimationFrame(previewRAF);previewStartTime=null;const cvs=$('previewCanvas'),ctx=cvs.getContext('2d'),params=readShakeParams();function step(ts){if(previewStartTime===null)previewStartTime=ts;const elapsed=(ts-previewStartTime)/1000;if(elapsed>=params.duration){renderShakeToCanvas(ctx,previewImg,cvs.width,cvs.height,params.duration,params);ctx.clearRect(0,0,cvs.width,cvs.height);ctx.drawImage(previewImg,0,0,cvs.width,cvs.height);previewRAF=null;return;}renderShakeToCanvas(ctx,previewImg,cvs.width,cvs.height,Math.min(elapsed,params.duration),params);previewRAF=requestAnimationFrame(step);}renderShakeToCanvas(ctx,previewImg,cvs.width,cvs.height,0,params);previewRAF=requestAnimationFrame(step);});
-
-  const video1=document.createElement('video');video1.muted=true;video1.playsInline=true;
-  // Keep it in the document (just invisible) rather than fully detached.
-  // Some browsers — mobile Safari in particular — throttle or suspend decode
-  // and stop firing requestVideoFrameCallback for video elements that are
-  // never actually attached/rendered anywhere, which made scanning silently
-  // stall partway through with no error.
-  video1.style.cssText='position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;';
-  document.body.appendChild(video1);
-  let video1Ready=false,scanCancelled=false,triggers=[];
-  $('video1File').addEventListener('change',function(){const f=this.files&&this.files[0];if(!f)return;$('video1Name').textContent=f.name;const url=URL.createObjectURL(f);video1Ready=false;video1.src=url;video1.addEventListener('loadedmetadata',function onMeta(){video1.removeEventListener('loadedmetadata',onMeta);video1Ready=true;$('scanBtn').disabled=!pattern;setStatus('scanStatus','Video 1 loaded — '+video1.videoWidth+'×'+video1.videoHeight+', '+video1.duration.toFixed(2)+'s.','ok');},{once:true});});
-  // Races a promise against a timeout so a browser event that never fires
-  // (canplay, play(), etc.) can never hang the scan forever — it just moves
-  // on and lets the tick watchdog further downstream catch a genuinely dead
-  // video. onTimeout, if given, is called (not thrown) when the timeout wins.
-  function withTimeout(promise,ms,onTimeout){
-    return new Promise((resolve,reject)=>{
-      let done=false;
-      const timer=setTimeout(()=>{if(done)return;done=true;if(onTimeout)onTimeout();resolve(false);},ms);
-      promise.then(()=>{if(done)return;done=true;clearTimeout(timer);resolve(true);},(err)=>{if(done)return;done=true;clearTimeout(timer);reject(err);});
-    });
-  }
-  function seekTo(video,t){
-    return new Promise(resolve=>{
-      const target=Math.min(Math.max(t,0),Math.max(video.duration-.001,0));
-      // If we're already at (or very near) the target, setting currentTime
-      // to the same value often does NOT fire a 'seeked' event at all — this
-      // is a well-known iOS Safari quirk and was causing an infinite hang
-      // here every time (a freshly loaded video's currentTime is already 0,
-      // and seekTo(video1,0) is exactly what runs before every scan).
-      if(Math.abs(video.currentTime-target)<0.05){resolve();return;}
-      let done=false;
-      const finish=()=>{if(done)return;done=true;video.removeEventListener('seeked',onSeeked);clearTimeout(timer);resolve();};
-      const onSeeked=()=>finish();
-      video.addEventListener('seeked',onSeeked);
-      video.currentTime=target;
-      // Safety net either way: never wait forever for a 'seeked' event that might not fire.
-      const timer=setTimeout(finish,3000);
-    });
-  }
-  function similarity(imageData,patternPixels){
-    // Mean colour distance, converted to a percentage. This is deliberately
-    // tolerant of normal video compression instead of requiring byte-for-byte
-    // equality with the JSON sample.
-    let sum=0,n=Math.min(patternPixels.length,Math.floor(imageData.length/4));
-    for(let i=0;i<n;i++){
-      const r=imageData[i*4],g=imageData[i*4+1],b=imageData[i*4+2];
-      const [pr,pg,pb]=patternPixels[i];
-      const dr=r-pr,dg=g-pg,db=b-pb;
-      sum+=dr*dr+dg*dg+db*db;
-    }
-    if(!n)return 0;
-    const rms=Math.sqrt(sum/n);
-    return clamp(100*(1-rms/(255*Math.sqrt(3))),0,100);
-  }
-  $('scanBtn').addEventListener('click',async function(){
-    if(!pattern||!video1Ready)return;
-    scanCancelled=false;triggers=[];renderTriggerTable();
-    $('scanBtn').disabled=true;$('cancelScanBtn').style.display='inline-block';
-    $('scanProgressWrap').style.display='block';$('scanProgressBar').style.width='0%';
-    const centerThreshold=parseFloat($('centerThreshInput').value),fullThreshold=parseFloat($('fullThreshInput').value),ratio=parseFloat($('scanRatioInput').value)/100,shakeParams=readShakeParams(),stepSec=1/(shakeParams.scanFps||60),total=video1.duration;
-    const offCenter=document.createElement('canvas'),offFull=document.createElement('canvas');
-    offFull.width=pattern.full.width;offFull.height=pattern.full.height;
-    offCenter.width=pattern.center.width;offCenter.height=pattern.center.height;
-    // willReadFrequently: getImageData() is called on these every sampled
-    // frame. Without this hint, GPU-backed canvases force a synchronous
-    // GPU->CPU flush on every readback, which is dramatically slower on
-    // mobile GPUs and was the real cause of the multi-minute scan times —
-    // not a hang, just an expensive round trip repeated hundreds of times.
-    const cctx=offCenter.getContext('2d',{willReadFrequently:true,alpha:false}),fctx=offFull.getContext('2d',{willReadFrequently:true,alpha:false});
-    fctx.imageSmoothingEnabled=true;cctx.imageSmoothingEnabled=true;
-    let eventArmed=true,unmatchedFrames=3,lastSampleTime=-Infinity,stalled=false;
-
-    // --- Debug mode ------------------------------------------------------
-    const debugMode=$('advDebugModeInput').checked,debugPanel=$('scanDebug');
-    debugPanel.style.display=debugMode?'block':'none';
-    debugPanel.textContent='';
-    const scanStartWall=performance.now();
-    let frameCount=0,sumFrameMs=0,maxFrameMs=0,lastFrameMs=0,lastLogWall=0;
-    const dbg=(label,extra)=>{
-      if(!debugMode)return;
-      const line='['+((performance.now()-scanStartWall)/1000).toFixed(2)+'s] '+label+(extra?' '+JSON.stringify(extra):'');
-      console.debug('[shakyyyy]',line);
-      debugPanel.textContent+=line+'\n';
-      debugPanel.scrollTop=debugPanel.scrollHeight;
-    };
-    if(debugMode){
-      dbg('scan start',{
-        video1:{w:video1.videoWidth,h:video1.videoHeight,duration:+total.toFixed(2),readyState:video1.readyState,networkState:video1.networkState},
-        pattern:{full:[offFull.width,offFull.height],center:[offCenter.width,offCenter.height]},
-        stepSec:+stepSec.toFixed(4),
-        useRVFC:'requestVideoFrameCallback' in HTMLVideoElement.prototype,
-        hardwareConcurrency:navigator.hardwareConcurrency||null,
-        deviceMemory:navigator.deviceMemory||null,
-        ua:navigator.userAgent
-      });
-    }
-    // ----------------------------------------------------------------------
-
-    // Do not repeatedly seek Video 1. Repeated currentTime seeks can cause some
-    // browsers/devices to jump back to the beginning or stall while decoding.
-    // Instead, play once and sample decoded frames at the requested scan rate.
-    // The frame is still resized EXACTLY to the JSON full-pattern dimensions.
-    try{
-      video1.pause();
-      dbg('pausing + seeking to 0',{currentTime:+video1.currentTime.toFixed(2),readyState:video1.readyState});
-      await seekTo(video1,0);
-      dbg('seek settled',{currentTime:+video1.currentTime.toFixed(2),readyState:video1.readyState});
-      if(video1.readyState<2){
-        dbg('readyState<2, waiting for canplay',{readyState:video1.readyState,networkState:video1.networkState});
-        const ok=await withTimeout(new Promise(resolve=>{const fn=()=>{video1.removeEventListener('canplay',fn);resolve();};video1.addEventListener('canplay',fn,{once:true});}),8000,()=>dbg('canplay never fired — proceeding anyway after 8s'));
-        dbg('canplay wait done',{firedNormally:ok,readyState:video1.readyState});
-      }
-      setStatus('scanStatus','Scanning… 0%');
-      dbg('calling video1.play()',{readyState:video1.readyState,networkState:video1.networkState,paused:video1.paused});
-      const playOk=await withTimeout(video1.play(),8000,()=>dbg('play() never settled — proceeding anyway after 8s'));
-      dbg('play() done',{settledNormally:playOk,paused:video1.paused,readyState:video1.readyState,currentTime:+video1.currentTime.toFixed(2)});
-
-      await new Promise(resolve=>{
-        let lastTime=-Infinity;
-        const processFrame=(mediaTime)=>{
-          if(scanCancelled){resolve();return;}
-          const t=Number.isFinite(mediaTime)?mediaTime:video1.currentTime;
-          if(t-lastTime+1e-7<stepSec)return;
-          lastTime=t;
-          const frameStartWall=debugMode?performance.now():0;
-          const vw=video1.videoWidth,vh=video1.videoHeight;
-          if(vw&&vh){
-            fctx.clearRect(0,0,offFull.width,offFull.height);
-            fctx.drawImage(video1,0,0,vw,vh,0,0,offFull.width,offFull.height);
-            const centerW=Math.max(1,Math.round(offFull.width*ratio)),centerH=Math.max(1,Math.round(offFull.height*ratio));
-            const centerX=Math.max(0,(offFull.width-centerW)/2),centerY=Math.max(0,(offFull.height-centerH)/2);
-            cctx.clearRect(0,0,offCenter.width,offCenter.height);
-            cctx.drawImage(offFull,centerX,centerY,centerW,centerH,0,0,offCenter.width,offCenter.height);
-            const centerSim=similarity(cctx.getImageData(0,0,offCenter.width,offCenter.height).data,pattern.center.pixels);
-            let matched=false,fullSim=0;
-            if(centerSim>=centerThreshold){
-              fullSim=similarity(fctx.getImageData(0,0,offFull.width,offFull.height).data,pattern.full.pixels);
-              matched=fullSim>=fullThreshold;
-            }
-            if(matched){
-              unmatchedFrames=0;
-              if(eventArmed){
-                triggers.push({t,centerSim,fullSim,source:'auto'});
-                eventArmed=false;
-                renderTriggerTable();
-                dbg('trigger found',{t:+t.toFixed(2),centerSim:+centerSim.toFixed(1),fullSim:+fullSim.toFixed(1)});
-              }
-            }else{
-              unmatchedFrames++;
-              if(unmatchedFrames>=2)eventArmed=true;
-            }
-          }
-          $('scanProgressBar').style.width=Math.round(100*clamp(t/Math.max(total,.001),0,1))+'%';
-          $('scanStatus').textContent='Scanning… '+Math.round(100*clamp(t/Math.max(total,.001),0,1))+'%';
-          if(debugMode){
-            frameCount++;
-            const frameMs=performance.now()-frameStartWall;
-            lastFrameMs=frameMs;sumFrameMs+=frameMs;if(frameMs>maxFrameMs)maxFrameMs=frameMs;
-            // Throttle panel/console writes to ~2x/second so debug mode itself doesn't become the bottleneck.
-            const nowWall=performance.now();
-            if(nowWall-lastLogWall>500){
-              lastLogWall=nowWall;
-              dbg('frame',{
-                n:frameCount,t:+t.toFixed(2),pct:Math.round(100*clamp(t/Math.max(total,.001),0,1)),
-                lastMs:+lastFrameMs.toFixed(1),avgMs:+(sumFrameMs/frameCount).toFixed(1),maxMs:+maxFrameMs.toFixed(1),
-                readyState:video1.readyState,buffered:video1.buffered.length?+video1.buffered.end(video1.buffered.length-1).toFixed(2):null
-              });
-            }
-          }
-        };
-
-        let settled=false,rafId=null,rvfcId=null,watchdogId=null,lastTickAt=performance.now();
-        // Adaptive stall threshold: rather than one fixed timeout that
-        // unfairly kills long/slow scans (e.g. a 25s video on a slow phone
-        // where per-frame time is legitimately higher, vs a 1.7s video that
-        // finishes before any slowdown accumulates), track the actual recent
-        // pace of ticks and only declare a stall once the gap since the last
-        // tick is way outside that pace AND past a generous floor. This was
-        // very likely the real cause of "works on short clips, not long
-        // ones": the old flat 6s timeout could fire on a scan that was still
-        // making progress, just slowly.
-        let emaGapMs=200; // exponential moving average of tick-to-tick gap
-        const finish=()=>{
-          if(settled)return;
-          settled=true;
-          if(rafId!==null)cancelAnimationFrame(rafId);
-          if(rvfcId!==null&&video1.cancelVideoFrameCallback)video1.cancelVideoFrameCallback(rvfcId);
-          if(watchdogId!==null)clearInterval(watchdogId);
-          video1.pause();
-          resolve();
-        };
-        video1.addEventListener('ended',finish,{once:true});
-        const useRVFC='requestVideoFrameCallback' in HTMLVideoElement.prototype;
-        const tick=(now,meta)=>{
-          if(settled)return;
-          const nowWall=performance.now(),gap=nowWall-lastTickAt;
-          emaGapMs=emaGapMs*0.85+gap*0.15;
-          lastTickAt=nowWall;
-          if(scanCancelled){finish();return;}
-          const before=video1.currentTime;
-          processFrame(useRVFC&&meta?meta.mediaTime:before);
-          if(video1.ended||video1.currentTime>=total-0.001){finish();return;}
-          if(useRVFC)rvfcId=video1.requestVideoFrameCallback(tick);
-          else rafId=requestAnimationFrame((ts)=>tick(ts,null));
-        };
-        // Watchdog: if no frame callback shows up for way longer than this
-        // scan's own recent pace (buffering stall, backgrounded tab
-        // throttling decode, codec hiccup, etc.), stop waiting instead of
-        // hanging forever with a frozen progress bar. Floor of 20s so a
-        // single genuinely slow frame on a struggling device never counts
-        // as a stall.
-        watchdogId=setInterval(()=>{
-          if(settled)return;
-          const gap=performance.now()-lastTickAt,threshold=Math.max(20000,emaGapMs*10);
-          if(debugMode)dbg('watchdog check',{gapMs:Math.round(gap),thresholdMs:Math.round(threshold),emaGapMs:Math.round(emaGapMs)});
-          if(gap>threshold){stalled=true;finish();}
-        },1000);
-        if(useRVFC)rvfcId=video1.requestVideoFrameCallback(tick);else rafId=requestAnimationFrame((ts)=>tick(ts,null));
-      });
-      if(debugMode){
-        dbg('scan loop ended',{stalled,cancelled:scanCancelled,frameCount,avgMs:frameCount?+(sumFrameMs/frameCount).toFixed(1):0,maxMs:+maxFrameMs.toFixed(1),wallSec:+((performance.now()-scanStartWall)/1000).toFixed(1),triggersFound:triggers.length});
-      }
-      if(stalled){
-        setStatus('scanStatus','Scan stalled — Video 1 stopped producing new frames for well beyond its own normal pace (buffering stall, tab backgrounded, or a decode hiccup). Try re-encoding the file, lowering the scan rate, or keeping the tab in the foreground while scanning. Turn on Debug mode in Advanced options for details.','warn');
-      }
-    }catch(e){
-      if(debugMode)dbg('scan error',{message:e&&e.message?e.message:String(e)});
-      if(window.__showShakyyyyError)window.__showShakyyyyError('Scan error',e&&e.message?e.message:String(e),'',0,0,e&&e.stack);
-      setStatus('scanStatus','Scan failed — see the red error bar above.','warn');
-    }finally{
-      video1.pause();
-      // IMPORTANT: do NOT seek back to 0 after scanning. That made the timestamp
-      // video visibly jump/loop back to its beginning when the scan finished.
-      $('scanProgressBar').style.width='100%';
-      $('scanBtn').disabled=false;$('cancelScanBtn').style.display='none';
-      if(!scanCancelled&&$('scanStatus').textContent.startsWith('Scanning'))setStatus('scanStatus',triggers.length?'Done — '+triggers.length+' flash'+(triggers.length===1?'':'es')+' found.':'Done — no flashes matched at this threshold.',triggers.length?'ok':'warn');
-    }
+// Show only the controls that matter for the current mode and graph.
+function applyVis(){
+  const m=$('style').value,g=$('graph').value;
+  document.querySelectorAll('[data-m],[data-g]').forEach(el=>{
+    const mOK=!el.dataset.m||el.dataset.m.split(',').includes(m);
+    const gOK=!el.dataset.g||el.dataset.g.split(',').includes(g);
+    el.style.display=(el.dataset.or?(mOK||gOK):(mOK&&gOK))?'':'none';
   });
-  $('cancelScanBtn').addEventListener('click',()=>{scanCancelled=true;});
-  $('addManualBtn').addEventListener('click',function(){const v=parseFloat($('manualTimeInput').value);if(isNaN(v)||v<0)return;triggers.push({t:v,centerSim:null,fullSim:null,source:'manual'});triggers.sort((a,b)=>a.t-b.t);renderTriggerTable();$('manualTimeInput').value='';});
-  function renderTriggerTable(){triggers.sort((a,b)=>a.t-b.t);const rows=$('triggerRows');rows.innerHTML='';$('triggerTableWrap').style.display=triggers.length?'block':'none';$('triggerEmpty').style.display=triggers.length?'none':'block';triggers.forEach((trig,idx)=>{const tr=document.createElement('tr');tr.innerHTML='<td>'+fmtTime(trig.t)+'</td><td>'+(trig.centerSim!=null?trig.centerSim.toFixed(1)+'%':'—')+'</td><td>'+(trig.fullSim!=null?trig.fullSim.toFixed(1)+'%':'—')+'</td><td>'+trig.source+'</td><td><button data-idx="'+idx+'">✕</button></td>';rows.appendChild(tr);});rows.querySelectorAll('button').forEach(btn=>btn.addEventListener('click',function(){triggers.splice(parseInt(this.dataset.idx,10),1);renderTriggerTable();}));}
-
-  const video2=document.createElement('video');video2.playsInline=true;let video2Ready=false,renderRAFId=null;
-  $('video2File').addEventListener('change',function(){const f=this.files&&this.files[0];if(!f)return;$('video2Name').textContent=f.name;const url=URL.createObjectURL(f);video2Ready=false;video2.src=url;video2.addEventListener('loadedmetadata',function onMeta(){video2.removeEventListener('loadedmetadata',onMeta);video2Ready=true;const cvs=$('renderCanvas'),scale=Math.min(960/video2.videoWidth,1);cvs.width=Math.round(video2.videoWidth*scale);cvs.height=Math.round(video2.videoHeight*scale);$('playVideo2Btn').disabled=false;updateExportButton();setStatus('exportStatus','Video 2 loaded — '+video2.videoWidth+'×'+video2.videoHeight+', '+video2.duration.toFixed(2)+'s.','ok');},{once:true});});
-  function activeTrigger(t,duration){for(const trig of triggers){if(t>=trig.t&&t<trig.t+duration)return trig;}return null;}
-  function renderLoop(){if(video2.paused||video2.ended){renderRAFId=null;return;}const cvs=$('renderCanvas'),ctx=cvs.getContext('2d'),t=video2.currentTime,params=readShakeParams(),trig=activeTrigger(t,params.duration);if(trig)renderShakeToCanvas(ctx,video2,cvs.width,cvs.height,t-trig.t,params);else{ctx.clearRect(0,0,cvs.width,cvs.height);ctx.drawImage(video2,0,0,cvs.width,cvs.height);}renderRAFId=requestAnimationFrame(renderLoop);}
-  video2.addEventListener('play',()=>{if(!renderRAFId)renderRAFId=requestAnimationFrame(renderLoop);});
-  video2.addEventListener('pause',()=>{if(renderRAFId){cancelAnimationFrame(renderRAFId);renderRAFId=null;}});
-  video2.addEventListener('ended',()=>{if(renderRAFId){cancelAnimationFrame(renderRAFId);renderRAFId=null;}});
-  $('playVideo2Btn').addEventListener('click',()=>{if(video2Ready)video2.play();});$('pauseVideo2Btn').addEventListener('click',()=>video2.pause());video2.addEventListener('play',()=>{$('pauseVideo2Btn').disabled=false;});video2.addEventListener('pause',()=>{$('pauseVideo2Btn').disabled=true;});
-  let video2File=null;
-  function supportsExport(){return !!(window.Mediabunny&&window.Mediabunny.Input&&window.Mediabunny.Output&&window.Mediabunny.Conversion&&window.Mediabunny.Mp4OutputFormat&&window.Mediabunny.BufferTarget);}
-  function updateExportButton(){ $('exportBtn').disabled=!(video2Ready && video2File && supportsExport()); }
-  window.addEventListener('mediabunnyready', updateExportButton);
-  // The module loads asynchronously; keep the button state correct even if the video loads first.
-  const exportReadyPoll=setInterval(()=>{updateExportButton();if(supportsExport())clearInterval(exportReadyPoll);},250);
-  function getExportDimensions(){
-    // Preserve ANY source aspect ratio. 1080-class output:
-    // landscape <= 1920x1080, portrait <= 1080x1920, square = 1080x1080.
-    const sw=Math.max(1,video2.videoWidth),sh=Math.max(1,video2.videoHeight),r=sw/sh;
-    let W,H;
-    if(r>=1){ W=1920; H=Math.max(1,Math.round(W/r)); if(H>1080){H=1080;W=Math.round(H*r);} }
-    else { H=1920; W=Math.max(1,Math.round(H*r)); if(W>1080){W=1080;H=Math.round(W/r);} }
-    W=Math.max(2,Math.round(W/2)*2); H=Math.max(2,Math.round(H/2)*2);
-    return {W,H};
+}
+function applyPreset(m){
+  for(const [k,v] of Object.entries(PRESET[m])){
+    const el=$(k==='dur'||k==='mag'||k==='freq'||k==='laps'||k==='scatter'||k==='atk'?k:k);
+    if(el.tagName==='SELECT')el.value=String(v);else setRange(k,v);
   }
-  async function export1080p60(){
-    if(!video2Ready||!video2File||!supportsExport())return;
-    const MB=window.Mediabunny,{W,H}=getExportDimensions(),FPS=60,btn=$('exportBtn');
-    btn.disabled=true;$('downloadRow').style.display='none';setStatus('exportStatus',`Preparing ${W}×${H} 60 FPS export…`);
-    try{
-      const input=new MB.Input({source:new MB.BlobSource(video2File),formats:MB.ALL_FORMATS});
-      const output=new MB.Output({format:new MB.Mp4OutputFormat({fastStart:'in-memory'}),target:new MB.BufferTarget()});
-      const frameCanvas=document.createElement('canvas');frameCanvas.width=W;frameCanvas.height=H;
-      const frameCtx=frameCanvas.getContext('2d',{alpha:false}),params=readShakeParams();
-      const conversion=await MB.Conversion.init({input,output,tracks:'primary',video:{width:W,height:H,fit:'contain',frameRate:FPS,codec:'avc',bitrate:20000000,keyFrameInterval:2,hardwareAcceleration:'prefer-hardware',forceTranscode:true,processedWidth:W,processedHeight:H,process:(sample)=>{frameCtx.clearRect(0,0,W,H);sample.draw(frameCtx,0,0,W,H);const trig=activeTrigger(sample.timestamp,params.duration);if(trig)renderShakeToCanvas(frameCtx,frameCanvas,W,H,sample.timestamp-trig.t,params);return frameCanvas;}},audio:{codec:'aac',bitrate:192000}});
-      conversion.onProgress=(progress)=>{$('exportStatus').textContent=`Rendering ${W}×${H} 60fps… `+Math.round(progress*100)+'%';};
-      if(!conversion.isValid)throw new Error(`This browser cannot encode ${W}×${H} H.264 MP4.`);
-      await conversion.execute();
-      const blob=new Blob([output.target.buffer],{type:'video/mp4'}),url=URL.createObjectURL(blob),name=`shakyyyy-${W}x${H}-60fps.mp4`;
-      $('downloadLink').href=url;$('downloadLink').download=name;$('downloadLink').textContent=`Download ${W}×${H} 60 FPS MP4`;$('downloadRow').style.display='flex';
-      setStatus('exportStatus',`Done — ${W}×${H} at 60 FPS MP4 rendered from the original video, preserving its ${W/H===1?'1:1':(W/H>1?'landscape':'portrait')} aspect ratio.`,'ok');
-    }catch(e){console.error(e);setStatus('exportStatus','Export failed: '+(e&&e.message?e.message:'your browser may not support WebCodecs/H.264 export.'),'warn');}
-    finally{btn.disabled=false;}
-  }
-  $('video2File').addEventListener('change',function(){const f=this.files&&this.files[0];video2File=f||null;updateExportButton();});
-  $('exportBtn').addEventListener('click',export1080p60);
-  if(!supportsExport())$('exportBtn').title='Use a modern Chromium browser with WebCodecs for 60 FPS MP4 export.';
+}
 
-  function buildManifest(){return{generatedAt:new Date().toISOString(),patternMeta:pattern?pattern.meta:null,thresholds:{centerConfidence:parseFloat($('centerThreshInput').value),fullConfidence:parseFloat($('fullThreshInput').value),centerRatio:parseFloat($('scanRatioInput').value)/100},shakeParams:readShakeParams(),triggers:triggers.map(t=>({time:t.t,centerSim:t.centerSim,fullSim:t.fullSim,source:t.source}))};}
-  $('downloadManifestBtn').addEventListener('click',()=>downloadJSON(buildManifest(),'shakyyyy-manifest.json'));
-  $('copyManifestBtn').addEventListener('click',function(){copyText(JSON.stringify(buildManifest(),null,2),()=>setStatus('exportStatus','Manifest copied to clipboard.','ok'),()=>setStatus('exportStatus','Copy failed — use the download button instead.','warn'));});
+// ---------- Pattern (step 1) ----------
+let pattern=null,pImg=null,pNW=0,pNH=0,pSel=null,pDrag=null;
+const pv=$('patView');
+function sampleFrom(src,sx,sy,sw,sh,maxDim){
+  const a=sw/sh,ow=a>=1?maxDim:Math.max(1,Math.round(maxDim*a)),oh=a>=1?Math.max(1,Math.round(maxDim/a)):maxDim;
+  const c=mk(ow,oh),x=c.getContext('2d',{willReadFrequently:true});
+  x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';
+  x.drawImage(src,sx,sy,sw,sh,0,0,ow,oh);
+  return toPatch(x,ow,oh);
+}
+function toPatch(x,w,h){const d=x.getImageData(0,0,w,h).data,px=[];let r=0,g=0,b=0;for(let i=0;i<d.length;i+=4){px.push([d[i],d[i+1],d[i+2]]);r+=d[i];g+=d[i+1];b+=d[i+2];}const n=px.length||1;return{width:w,height:h,pixels:px,averageRGB:[Math.round(r/n),Math.round(g/n),Math.round(b/n)]};}
+function fromJSON(p,maxDim){
+  if(p.width<=maxDim&&p.height<=maxDim)return p;
+  const c=mk(p.width,p.height),x=c.getContext('2d');const im=x.createImageData(p.width,p.height);
+  p.pixels.forEach((q,i)=>im.data.set([q[0],q[1],q[2],255],i*4));
+  x.putImageData(im,0,0);return sampleFrom(c,0,0,p.width,p.height,maxDim);
+}
+function drawPat(){
+  if(!pImg)return;const x=pv.getContext('2d');x.clearRect(0,0,pv.width,pv.height);x.drawImage(pImg,0,0,pv.width,pv.height);
+  if(pSel){const r=N('pRatio')/100,cw=Math.max(2,pSel.w*r),ch=Math.max(2,pSel.h*r);
+    x.lineWidth=3;x.strokeStyle='#fff';x.strokeRect(pSel.x,pSel.y,pSel.w,pSel.h);
+    x.setLineDash([6,4]);x.lineWidth=2;x.strokeStyle='#000';x.strokeRect(pSel.x+(pSel.w-cw)/2,pSel.y+(pSel.h-ch)/2,cw,ch);x.setLineDash([]);}
+}
+$('patFile').onchange=function(){const f=this.files[0];if(!f)return;const im=new Image();
+  im.onload=()=>{pImg=im;pNW=im.naturalWidth;pNH=im.naturalHeight;const s=Math.min(1,900/pNW,700/pNH);pv.width=Math.round(pNW*s);pv.height=Math.round(pNH*s);
+    pSel={x:0,y:0,w:pv.width,h:pv.height};$('patArea').style.display='block';drawPat();
+    msg('msgPat','Drag a box over just the flashing part, then press <b>Extract &amp; use pattern</b>. Or press <b>Use whole image</b>.',false);URL.revokeObjectURL(im.src);};
+  im.src=URL.createObjectURL(f);};
+const pt=e=>{const r=pv.getBoundingClientRect();return{x:clamp((e.clientX-r.left)*pv.width/r.width,0,pv.width),y:clamp((e.clientY-r.top)*pv.height/r.height,0,pv.height)};};
+pv.onpointerdown=e=>{if(!pImg)return;pv.setPointerCapture(e.pointerId);pDrag=pt(e);};
+pv.onpointermove=e=>{if(!pDrag)return;const p=pt(e);pSel={x:Math.min(pDrag.x,p.x),y:Math.min(pDrag.y,p.y),w:Math.abs(p.x-pDrag.x),h:Math.abs(p.y-pDrag.y)};drawPat();};
+pv.onpointerup=pv.onpointercancel=()=>{if(!pDrag)return;pDrag=null;if(pSel&&(pSel.w<6||pSel.h<6))pSel={x:0,y:0,w:pv.width,h:pv.height};drawPat();};
+$('patWhole').onclick=()=>{if(!pImg)return;pSel={x:0,y:0,w:pv.width,h:pv.height};drawPat();};
+$('pRatio').addEventListener('input',drawPat);
+$('patExtract').onclick=()=>{
+  if(!pImg||!pSel){msg('msgPat','Upload a pattern image first.',true);return;}
+  const s=pNW/pv.width,sel={x:pSel.x*s,y:pSel.y*s,w:pSel.w*s,h:pSel.h*s},r=N('pRatio')/100;
+  const cen={x:sel.x+sel.w*(1-r)/2,y:sel.y+sel.h*(1-r)/2,w:sel.w*r,h:sel.h*r};
+  const built={meta:{sourceWidth:pNW,sourceHeight:pNH,centerRatio:r,generatedAt:new Date().toISOString()},
+    full:sampleFrom(pImg,sel.x,sel.y,sel.w,sel.h,N('pFull')),center:sampleFrom(pImg,cen.x,cen.y,cen.w,cen.h,N('pCenter'))};
+  $('patPaste').value=JSON.stringify(built);useP(built);
+};
+function useP(p){
+  if(!p||!p.full||!p.center||!Array.isArray(p.full.pixels)||!Array.isArray(p.center.pixels)){msg('msgPat','That data does not look like a flash pattern. Extract one from an image instead.',true);return;}
+  pattern={full:fromJSON(p.full,32),center:fromJSON(p.center,32),meta:p.meta||null};
+  if(p.meta&&p.meta.centerRatio)setRange('cRatio',Math.round(p.meta.centerRatio*100));
+  $('scanBtn').disabled=!(v1ok&&pattern);
+  msg('msgPat','<b>Pattern ready.</b> '+(v1ok?'Next: press Scan for flashes in step 3.':'Next: choose video 1 in step 3.'),false);
+}
+$('patJson').onchange=function(){const f=this.files[0];if(!f)return;$('patJsonName').textContent=f.name;const r=new FileReader();r.onload=()=>{$('patPaste').value=r.result;};r.readAsText(f);};
+$('patUse').onclick=()=>{try{useP(JSON.parse($('patPaste').value.trim()));}catch(e){msg('msgPat','That text is not valid pattern JSON.',true);}};
+
+// ---------- Shake engine ----------
+// Every motion is a fraction of the frame, multiplied by one fade envelope, so long
+// durations never grow the offset and every shake ends exactly centred.
+function env(q,t,p){
+  q=clamp(q,0,1);const f=Math.max(.01,p.freq);
+  switch(p.graph){
+    case'exponential':{const k=p.envExp;return(Math.exp(-k*q)-Math.exp(-k))/(1-Math.exp(-k));}
+    case'easeOut':return Math.pow(1-q,p.easePow);
+    case'easeIn':return 1-Math.pow(q,p.easePow);
+    case'easeInOut':return .5*(1+Math.cos(Math.PI*q));
+    case'sine':return Math.sin(Math.PI*(1-q)/2);
+    case'pulse':return Math.abs(Math.cos(TAU*f*t))*(1-q);
+    case'bounce':return Math.abs(Math.sin(Math.PI*p.bounceN*(1-q)))*(1-q);
+    case'spring':return(1-q)*(.5+.5*Math.cos(TAU*f*t))*2;
+    case'custom':{const w=.5+.5*Math.cos(TAU*p.cFreq*t+p.cPhase*TAU);return(1-p.mix)*(1-q)+p.mix*w*(1-q);}
+    default:return 1-q;
+  }
+}
+function rnd(n,s){const x=Math.sin(n*12.9898+s*78.233)*43758.5453;return(x-Math.floor(x))*2-1;}
+// Jitter path: each new spot is picked when the previous move finishes, a bit further round a loose circle.
+function spotList(n,sd){const pts=[];let a=TAU*(rnd(-1,sd)+1)/2;for(let i=0;i<=n;i++){const r=0.85+0.15*rnd(i+5000,sd);pts.push({x:r*Math.cos(a),y:r*Math.sin(a)});a+=TAU*(0.15+0.15*(rnd(i+1000,sd)+1)/2);}return pts;}
+let scr=null;function scratch(W,H){if(!scr||scr.width!==W||scr.height!==H)scr=mk(W,H);return scr;}
+// Scatter points for the Spiral mode: fully random, like the original.
+function scatterRaw(t,p){
+  const iv=Math.max(.02,p.sInt),pos=t/iv,k=Math.floor(pos),fr=pos-k,e=p.jm==='smooth'?smooth(fr):0;
+  const pt=i=>{const a=rnd(2*i,p.seed)*Math.PI,m=(rnd(2*i+1,p.seed)+1)/2;return{x:m*Math.cos(a),y:m*Math.sin(a)};};
+  const A=pt(k),B=pt(k+1);return{x:A.x+(B.x-A.x)*e,y:A.y+(B.y-A.y)*e};
+}
+function raw(u,t,p){
+  const a=p.phase*Math.PI/180,d=p.dir,f=Math.max(.01,p.freq),sd=p.seed;
+  switch(p.style){
+    case'spiral':{const g=d*TAU*p.laps*u+a;return{x:Math.cos(g),y:Math.sin(g)};}
+    case'jitter':{const idx=Math.floor(t*f),fr=t*f-idx,pts=spotList(idx+1,sd),A=pts[idx],B=pts[idx+1];
+      if(p.jm==='step')return A;const e=smooth(fr);return{x:A.x+(B.x-A.x)*e,y:A.y+(B.y-A.y)*e};}
+    case'punch':return{s:1};
+    case'swing':return{x:d*Math.cos(TAU*p.laps*u+a)};
+    case'heart':return{y:-(Math.exp(-(((u-.08)/.08)**2))+.6*Math.exp(-(((u-.3)/.08)**2)))};
+    case'rumble':return{x:.6*Math.sin(TAU*f*.5*t+sd)+.4*Math.sin(TAU*f*.68*t+2*sd),y:.6*Math.sin(TAU*f*.56*t+1.7+sd)+.4*Math.sin(TAU*f*.41*t+3.1)};
+    case'wobble':return{r:d*Math.sin(TAU*p.laps*u+a)};
+    case'buzz':return{x:Math.sin(TAU*f*3*t),y:.5*Math.cos(TAU*f*3.9*t)};
+  }
+  return{};
+}
+function shakeAt(t,p,W,H){
+  // t = seconds from the flash. Negative values are the lead-in: with Attack set, the shake starts early and peaks on the flash.
+  const dur=Math.max(.01,p.duration),lead=Math.max(0,p.attack);
+  if(t<-lead||t>=dur)return null;
+  const ramp=t<0?smooth(clamp((t+lead)/Math.max(lead,1e-6),0,1)):1;
+  const tc=Math.max(0,t),u=clamp(tc/dur,0,1);
+  const M=W,s=p.mag*0.0041667*p.radMult;
+  const k=clamp(env(u,tc,p),0,1)*ramp;
+  const r=raw(u,tc,p);
+  let x=(r.x||0)*s*k*M,y=(r.y||0)*s*k*M;
+  if(p.style==='spiral'&&p.scatter>0){const sc=scatterRaw(tc,p),amp=p.scatter/1000*M*k;x+=sc.x*amp;y+=sc.y*amp;}
+  x=clamp(x,-.4*M,.4*M);y=clamp(y,-.4*M,.4*M);
+  if(p.axis==='x')y=0;else if(p.axis==='y')x=0;
+  return{dx:x+p.cx*W,dy:y+p.cy*H,scale:clamp(1+(r.s||0)*s*1.5*k,.5,2),rot:(r.r||0)*s*3*k,
+    flash:p.flashOn?p.flashPct/100*ramp*(1-u)*(1-u):0};
+}
+function gray(v,hdr){if(v>1&&hdr)return`color(display-p3 ${v.toFixed(3)} ${v.toFixed(3)} ${v.toFixed(3)})`;const c=Math.round(clamp(v,0,1)*255);return`rgb(${c},${c},${c})`;}
+function drawFrame(ctx,src,W,H,sh,R){
+  const hdr=!!(ctx.getContextAttributes&&ctx.getContextAttributes().colorType==='float16');
+  ctx.save();ctx.globalCompositeOperation='source-over';ctx.clearRect(0,0,W,H);
+  if(!sh){ctx.drawImage(src,0,0,W,H);ctx.restore();return;}
+  ctx.translate(W/2+sh.dx,H/2+sh.dy);ctx.rotate(sh.rot);ctx.scale(sh.scale,sh.scale);
+  for(let ty=-R;ty<=R;ty++)for(let tx=-R;tx<=R;tx++){
+    ctx.save();ctx.translate(tx*W,ty*H);ctx.scale(Math.abs(tx)%2?-1:1,Math.abs(ty)%2?-1:1);
+    ctx.drawImage(src,-W/2,-H/2,W,H);ctx.restore();
+  }
+  ctx.restore();
+  const a=sh.flash;
+  if(!a)return;
+  if(typeof ctx.filter==='string'){
+    // Brightness and contrast move together: a bigger flash also pushes contrast further.
+    const tmp=scratch(W,H);tmp.getContext('2d').drawImage(ctx.canvas,0,0,W,H);
+    ctx.save();ctx.globalCompositeOperation='source-over';
+    ctx.filter=`brightness(${Math.max(0,1+a).toFixed(3)}) contrast(${Math.max(0,1+a*.6).toFixed(3)})`;
+    ctx.drawImage(tmp,0,0,W,H);ctx.restore();return;
+  }
+  ctx.save();
+  if(a>0){ctx.globalCompositeOperation='lighter';ctx.fillStyle=gray(a,hdr);}
+  else{ctx.globalCompositeOperation='multiply';ctx.fillStyle=gray(1+a,hdr);}
+  ctx.fillRect(0,0,W,H);ctx.restore();
+}
+function readP(){return{style:$('style').value,dir:N('dir'),axis:$('axis').value,jm:$('jm').value,
+  duration:N('dur'),mag:N('mag'),freq:N('freq'),laps:N('laps'),scatter:N('scatter'),sInt:N('sInt'),seed:N('seed'),
+  graph:$('graph').value,envExp:Math.max(.5,N('envExp')),easePow:Math.max(.5,N('easePow')),bounceN:N('bounceN'),
+  cFreq:Math.min(25,N('cFreq')),cPhase:N('cPhase'),mix:N('mix'),
+  attack:N('atk')/1000,phase:N('phase'),radMult:N('radMult'),cx:N('cx')/100,cy:N('cy')/100,mirror:Math.round(clamp(N('mirror'),1,3)),
+  flashOn:$('flashOn').checked,flashPct:N('flashNum')||0,
+  centerThr:N('cThr'),fullThr:N('fThr'),ratio:N('cRatio')/100,cool:N('cool')};}
+
+// ---------- Still image preview ----------
+let prevImg=null,prevRaf=null;
+$('prevFile').onchange=function(){const f=this.files[0];if(!f)return;const im=new Image();
+  im.onload=()=>{prevImg=im;const cv=$('prevCanvas'),s=Math.min(1,640/im.naturalWidth);cv.width=Math.round(im.naturalWidth*s);cv.height=Math.round(im.naturalHeight*s);
+    cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);$('playPrev').disabled=false;URL.revokeObjectURL(im.src);};
+  im.src=URL.createObjectURL(f);};
+$('playPrev').onclick=()=>{
+  if(!prevImg)return;if(prevRaf)cancelAnimationFrame(prevRaf);
+  const P=readP(),cv=$('prevCanvas'),ctx=cv.getContext('2d'),t0=performance.now();
+  const f=()=>{const t=(performance.now()-t0)/1000-P.attack;drawFrame(ctx,prevImg,cv.width,cv.height,shakeAt(t,P,cv.width,cv.height),P.mirror);
+    prevRaf=t<P.duration?requestAnimationFrame(f):null;};
+  f();
+};
+
+// ---------- Video 1: detection (step 3) ----------
+const v1=document.createElement('video');v1.muted=true;v1.playsInline=true;
+v1.style.cssText='position:fixed;left:0;top:0;width:2px;height:2px;opacity:.01;pointer-events:none;z-index:-1';
+document.body.appendChild(v1);
+let v1ok=false,stopFlag=false,scanning=false,triggers=[];
+$('v1File').onchange=function(){const f=this.files[0];if(!f)return;$('v1Name').textContent=f.name;v1ok=false;hideMsg('msgScan');
+  v1.src=URL.createObjectURL(f);
+  v1.onloadedmetadata=()=>{v1ok=true;$('scanBtn').disabled=!(pattern);$('scanStatus').textContent=`Video 1 loaded (${v1.duration.toFixed(1)} s). Press Scan for flashes.`;};};
+const seek0=()=>new Promise(res=>{if(v1.currentTime<.05){res();return;}const t=setTimeout(res,3000);
+  v1.onseeked=()=>{clearTimeout(t);v1.onseeked=null;res();};v1.currentTime=0;});
+const wrongVideo=b=>`<b>No flashes found in this video.</b><br>This is almost always the <b>wrong file</b>. You probably uploaded the high-quality original. Video 1 must be the compressed clip where the flash is clearly visible. The high-quality file goes in as Video 2, in step 4.<br><br>Closest match here: ${b.toFixed(0)}%. If you're sure this is the right file, lower "Center confidence" in step 3 to about 65% and scan again.`;
+
+$('scanBtn').onclick=async()=>{
+  if(!pattern||!v1ok||scanning)return;
+  const P=readP();scanning=true;stopFlag=false;triggers=[];renderRows();hideMsg('msgScan');
+  $('scanBtn').disabled=true;$('cancelBtn').style.display='inline-block';$('bar').style.display='block';$('barFill').style.width='0%';
+  const fC=mk(pattern.full.width,pattern.full.height),cC=mk(pattern.center.width,pattern.center.height);
+  const fx=fC.getContext('2d',{willReadFrequently:true}),cx=cC.getContext('2d',{willReadFrequently:true});
+  let run=null,bestC=0,lastT=-1e9,stalled=false;
+  const sim=(d,px)=>{let s=0;const n=Math.min(px.length,d.length>>2);for(let i=0;i<n;i++){const j=i*4,a=d[j]-px[i][0],b=d[j+1]-px[i][1],c=d[j+2]-px[i][2];s+=a*a+b*b+c*c;}return n?100*(1-Math.sqrt(s/(3*n))/255):0;};
+  // A flash is a run of matching frames. We keep the best frame of that run.
+  const close=()=>{if(run&&run.t-lastT>=P.cool){triggers.push({t:run.t,c:run.c,f:run.f});lastT=run.t;renderRows();}run=null;};
+  const frame=t=>{
+    fx.drawImage(v1,0,0,fC.width,fC.height);
+    const cw=Math.max(1,Math.round(fC.width*P.ratio)),ch=Math.max(1,Math.round(fC.height*P.ratio));
+    cx.drawImage(fC,(fC.width-cw)/2,(fC.height-ch)/2,cw,ch,0,0,cC.width,cC.height);
+    const c=sim(cx.getImageData(0,0,cC.width,cC.height).data,pattern.center.pixels);
+    bestC=Math.max(bestC,c);
+    if(c>=P.centerThr){
+      const f=sim(fx.getImageData(0,0,fC.width,fC.height).data,pattern.full.pixels);
+      if(f>=P.fullThr){if(!run||c>run.c)run={t,c,f};return;}
+    }
+    close();
+  };
+  const total=v1.duration||1,step=1/60;
+  try{
+    await seek0();
+    try{await v1.play();}catch(e){}
+    await new Promise(res=>{
+      let last=-1e9,done=false,lastTick=performance.now();
+      const finish=()=>{if(done)return;done=true;clearInterval(wd);v1.pause();res();};
+      const sched=fn=>v1.requestVideoFrameCallback?v1.requestVideoFrameCallback(fn):requestAnimationFrame(ts=>fn(ts,null));
+      const tick=(now,meta)=>{
+        if(done)return;lastTick=performance.now();
+        if(stopFlag){finish();return;}
+        const t=meta&&Number.isFinite(meta.mediaTime)?meta.mediaTime:v1.currentTime;
+        if(t-last>=step-1e-6){last=t;frame(t);}
+        const pct=clamp(t/total,0,1);
+        $('barFill').style.width=(pct*100).toFixed(1)+'%';
+        $('scanStatus').textContent=`Scanning… ${Math.round(pct*100)}% · best match so far ${bestC.toFixed(0)}% · ${triggers.length} found`;
+        if(v1.ended||t>=total-.03){finish();return;}
+        sched(tick);
+      };
+      const wd=setInterval(()=>{if(performance.now()-lastTick>20000){stalled=true;finish();}},1000);
+      v1.addEventListener('ended',finish,{once:true});
+      sched(tick);
+    });
+    close();
+    if(stalled)msg('msgScan','<b>The scan stopped early</b> because the video stopped delivering frames. Keep this tab open and in front, then press Scan again.',true);
+    else if(stopFlag)$('scanStatus').textContent=`Stopped. ${triggers.length} found so far.`;
+    else if(!triggers.length){msg('msgScan',wrongVideo(bestC),true);$('scanStatus').textContent='Scan finished. Nothing found.';}
+    else{msg('msgScan',`<b>Found ${triggers.length} flash${triggers.length>1?'es':''}.</b> Times are listed below. Next: step 4.`,false);$('scanStatus').textContent='Scan finished.';}
+  }catch(e){msg('msgScan','The scan failed: '+(e.message||e)+'. Try again, or try Chrome or Safari.',true);}
+  finally{scanning=false;v1.pause();$('scanBtn').disabled=!(pattern&&v1ok);$('cancelBtn').style.display='none';}
+};
+$('cancelBtn').onclick=()=>{stopFlag=true;};
+
+function fmtT(t){const m=Math.floor(t/60);return m?`${m}:${(t-m*60).toFixed(2).padStart(5,'0')}`:t.toFixed(2)+'s';}
+function renderRows(){
+  triggers.sort((a,b)=>a.t-b.t);
+  const rows=$('rows');rows.innerHTML='';
+  triggers.forEach((g,i)=>{const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${fmtT(g.t)}</td><td>${g.c==null?'-':g.c.toFixed(0)+'%'}</td><td>${g.f==null?'-':g.f.toFixed(0)+'%'}</td><td>${g.c==null?'manual':'auto'}</td><td><button data-i="${i}">✕</button></td>`;
+    rows.appendChild(tr);});
+  rows.querySelectorAll('button').forEach(b=>b.onclick=()=>{triggers.splice(+b.dataset.i,1);renderRows();});
+  $('tbl').style.display=triggers.length?'table':'none';$('empty').style.display=triggers.length?'none':'block';
+  refresh();
+}
+$('addMan').onclick=()=>{const v=parseFloat($('manT').value);if(isNaN(v)||v<0)return;triggers.push({t:v,c:null,f:null});$('manT').value='';renderRows();};
+
+// ---------- Video 2: preview and export (step 4) ----------
+const v2=document.createElement('video');v2.playsInline=true;
+let v2ok=false,v2File=null,rf=null,exporting=false;
+const rc=$('renderCanvas'),rctx=rc.getContext('2d',{colorSpace:'display-p3',colorType:'float16'});
+$('v2File').onchange=function(){const f=this.files[0];if(!f)return;v2File=f;$('v2Name').textContent=f.name;v2ok=false;v2.src=URL.createObjectURL(f);
+  v2.onloadeddata=()=>{v2ok=true;const s=Math.min(1,1280/v2.videoWidth);rc.width=Math.round(v2.videoWidth*s);rc.height=Math.round(v2.videoHeight*s);
+    $('playBtn').disabled=false;updExport();refresh();
+    if(v1ok&&Math.abs(v1.duration-v2.duration)>.5)msg('msgExp',`<b>Check the files.</b> Video 1 is ${v1.duration.toFixed(1)} s and Video 2 is ${v2.duration.toFixed(1)} s. They should be the same clip, or the flashes will land at the wrong time.`,true);
+    else hideMsg('msgExp');};};
+function drawV2(t){const P=readP();const tr=triggers.find(g=>t-g.t>=-P.attack&&t-g.t<P.duration);
+  drawFrame(rctx,v2,rc.width,rc.height,tr?shakeAt(t-tr.t,P,rc.width,rc.height):null,P.mirror);}
+function refresh(){if(v2ok&&v2.paused)drawV2(v2.currentTime);}
+function loop(){if(v2.paused||v2.ended){rf=null;return;}drawV2(v2.currentTime);rf=requestAnimationFrame(loop);}
+v2.onplay=()=>{$('pauseBtn').disabled=false;if(!rf)rf=requestAnimationFrame(loop);};
+v2.onpause=()=>{$('pauseBtn').disabled=true;refresh();};
+v2.onended=refresh;v2.onseeked=refresh;
+$('playBtn').onclick=()=>{if(v2ok)v2.play();};
+$('pauseBtn').onclick=()=>v2.pause();
+
+function outDims(){const r=v2.videoWidth/v2.videoHeight;let W,H;
+  if(r>=1){W=1920;H=Math.round(W/r);if(H>1080){H=1080;W=Math.round(H*r);}}
+  else{H=1920;W=Math.round(H*r);if(W>1080){W=1080;H=Math.round(W/r);}}
+  return{W:Math.max(2,Math.round(W/2)*2),H:Math.max(2,Math.round(H/2)*2)};}
+function updExport(){if(!exporting)$('exportBtn').disabled=!(v2ok&&v2File&&window.Mediabunny);}
+setInterval(updExport,500);
+const even=v=>Math.max(2,Math.round(v/2)*2);
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'})[c]);
+async function encodeOnce(MB,W,H,fps,bitrate,withAudio,P){
+  const src=mk(W,H),out=mk(W,H),sctx=src.getContext('2d',{alpha:false}),octx=out.getContext('2d',{alpha:false});
+  const input=new MB.Input({source:new MB.BlobSource(v2File),formats:MB.ALL_FORMATS});
+  const output=new MB.Output({format:new MB.Mp4OutputFormat({fastStart:'in-memory'}),target:new MB.BufferTarget()});
+  const conf={input,output,tracks:'primary',
+    video:{width:W,height:H,fit:'contain',frameRate:fps,codec:'avc',bitrate,keyFrameInterval:2,hardwareAcceleration:'no-preference',forceTranscode:true,processedWidth:W,processedHeight:H,
+      process:sample=>{sample.draw(sctx,0,0,W,H);
+        const t=sample.timestamp,tr=triggers.find(g=>t-g.t>=-P.attack&&t-g.t<P.duration);
+        drawFrame(octx,src,W,H,tr?shakeAt(t-tr.t,P,W,H):null,P.mirror);return out;}}};
+  conf.audio=withAudio?{codec:'aac',bitrate:192000}:{discard:true};
+  const conversion=await MB.Conversion.init(conf);
+  conversion.onProgress=p=>{$('expStatus').textContent=`Rendering ${W}×${H} at ${fps} FPS… ${Math.round(p*100)}%`;};
+  if(!conversion.isValid)throw new Error('encoder rejected '+W+'x'+H+' at '+fps+' FPS');
+  await conversion.execute();
+  return output.target.buffer;
+}
+$('exportBtn').onclick=async()=>{
+  const MB=window.Mediabunny;if(!MB||!v2ok||!v2File)return;
+  const P=readP(),btn=$('exportBtn'),{W:W0,H:H0}=outDims();
+  exporting=true;btn.disabled=true;$('dlRow').style.display='none';hideMsg('msgExp');
+  if(!window.VideoEncoder){msg('msgExp','<b>This browser cannot encode MP4 video.</b> Use a recent Chrome, Edge or Safari (Safari 16.4 or newer on iPhone and iPad).',true);exporting=false;btn.disabled=false;updExport();return;}
+  // Every export is 1080p class at 60 FPS. The only fallback is dropping audio if the audio encoder fails.
+  const tries=[
+    {W:W0,H:H0,fps:60,br:20e6,audio:true,label:'1080p 60 FPS'},
+    {W:W0,H:H0,fps:60,br:20e6,audio:false,label:'1080p 60 FPS, no audio'}
+  ];
+  let lastErr=null,used=null,buf=null;
+  for(const t of tries){
+    $('expStatus').textContent=`Preparing ${t.W}×${t.H} at ${t.fps} FPS…`;
+    try{buf=await encodeOnce(MB,t.W,t.H,t.fps,t.br,t.audio,P);used=t;break;}
+    catch(e){lastErr=e;console.warn('Export attempt failed:',t.label,e);}
+  }
+  if(!buf){
+    const detail=esc((lastErr&&(lastErr.message||lastErr))||'unknown error');
+    msg('msgExp',`<b>Export failed on this device.</b> Your browser could not encode 1080p at 60 FPS, which the final export needs. Things that usually help: use Chrome or Edge on a computer, or Safari 16.4 or newer on iPhone or iPad. If Video 2 is an iPhone HEVC clip, it may not open in Chrome on Windows, so export it as H.264 first.<br><small>Technical detail: ${detail}</small>`,true);
+    $('expStatus').textContent='';
+  }else{
+    const url=URL.createObjectURL(new Blob([buf],{type:'video/mp4'}));
+    const a=$('dl');a.href=url;a.download=`shakyyyy-${used.W}x${used.H}-${used.fps}fps.mp4`;a.textContent=`Download ${used.W}×${used.H} ${used.fps} FPS MP4`;
+    $('dlRow').style.display='flex';
+    $('expStatus').textContent=`Done: ${used.W}×${used.H} at ${used.fps} FPS (${used.label}).`;
+    if(used!==tries[0])msg('msgExp',`The audio could not be encoded on this device, so this export has no sound. The video is still 1080p at 60 FPS.`,false);
+  }
+  exporting=false;btn.disabled=false;updExport();
+};
+
+function buildManifest(){return{generatedAt:new Date().toISOString(),patternMeta:pattern?pattern.meta:null,
+  thresholds:{centerConfidence:N('cThr'),fullConfidence:N('fThr'),centerRatio:N('cRatio')/100},
+  shakeParams:readP(),triggers:triggers.map(t=>({time:t.t,centerSim:t.c,fullSim:t.f,source:t.c==null?'manual':'auto'}))};}
+$('manifestBtn').onclick=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(buildManifest(),null,2)],{type:'application/json'}));
+  const a=document.createElement('a');a.href=url;a.download='shakyyyy-manifest.json';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);};
+$('copyBtn').onclick=()=>{const s=JSON.stringify(buildManifest(),null,2);
+  if(navigator.clipboard)navigator.clipboard.writeText(s).then(()=>{$('expStatus').textContent='Manifest copied.';},()=>{$('expStatus').textContent='Copy failed. Use the download button instead.';});};
+
+// ---------- Controls ----------
+document.querySelectorAll('input[type=range]').forEach(el=>el.addEventListener('input',()=>{paint(el);refresh();}));
+document.querySelectorAll('input[type=number]').forEach(el=>el.addEventListener('input',()=>{paint(el);refresh();}));
+$('flash').addEventListener('input',()=>{$('flashNum').value=$('flash').value;paint($('flashNum'));refresh();});
+$('flashNum').addEventListener('input',()=>{const v=+$('flashNum').value;if(isFinite(v))$('flash').value=clamp(v,-20,50);paint($('flashNum'));refresh();});
+$('flashOn').addEventListener('change',refresh);
+$('style').addEventListener('change',()=>{applyPreset($('style').value);$('styleDesc').textContent=STYLE_DESC[$('style').value];applyVis();refresh();});
+$('graph').addEventListener('change',()=>{applyVis();refresh();});
+['dir','axis','jm'].forEach(id=>$(id).addEventListener('change',refresh));
+document.querySelectorAll('input[type=range]').forEach(paint);
+document.querySelectorAll('input[type=number]').forEach(paint);
+paint($('flashNum'));
+applyPreset('spiral');
+$('styleDesc').textContent=STYLE_DESC.spiral;
+applyVis();
 })();
 </script>
-</body>
-</html>
+</body></html>

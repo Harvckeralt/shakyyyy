@@ -149,7 +149,7 @@ details[open] summary{margin-bottom:16px}
       <div class="f" data-m="spiral"><label>Scatter interval (s)</label><input type="number" id="sInt" min="0.02" max="1" step="0.01" value="0.1"></div>
       <div class="f" data-m="spiral,jitter,rumble"><label>Scatter seed</label><input type="number" id="seed" min="0" max="9999" step="1" value="0"></div>
       <div class="f"><label>Mirror tile radius</label><input type="number" id="mirror" min="1" max="3" step="1" value="1"><small>1 = 3×3 mirrored tiles fill the edges, 2 = 5×5.</small></div>
-      <div class="f"><label>Re-trigger cooldown (s)</label><input type="number" id="cool" min="0.05" max="3" step="0.01" value="0.3"><small>Minimum gap between two detected flashes.</small></div>
+      <div class="f"><label>Re-trigger cooldown (s)</label><input type="number" id="cool" min="0.05" max="3" step="0.01" value="0.05"><small>0.05s prevents duplicate detections while allowing every real pattern appearance.</small></div>
       <div class="f" data-g="custom"><label>Custom graph frequency (Hz)</label><input type="number" id="cFreq" min="0.01" max="25" step="0.01" value="4"></div>
       <div class="f" data-g="custom"><label>Custom graph phase (cycles)</label><input type="number" id="cPhase" min="-10" max="10" step="0.01" value="0"></div>
       <div class="f" data-g="custom"><label>Custom graph mix <span class="v" id="mixV"></span></label><input type="range" id="mix" min="0" max="1" step="0.01" value="0.5" data-u="d2"></div>
@@ -274,9 +274,10 @@ function drawPat(){
     x.setLineDash([6,4]);x.lineWidth=2;x.strokeStyle='#000';x.strokeRect(pSel.x+(pSel.w-cw)/2,pSel.y+(pSel.h-ch)/2,cw,ch);x.setLineDash([]);}
 }
 $('patFile').onchange=function(){const f=this.files[0];if(!f)return;const im=new Image();
-  im.onload=()=>{pImg=im;pNW=im.naturalWidth;pNH=im.naturalHeight;const s=Math.min(1,900/pNW,700/pNH);pv.width=Math.round(pNW*s);pv.height=Math.round(pNH*s);
+  im.onload=()=>{if(!im.naturalWidth){msg('msgPat','This image loaded without a usable size. Save it as PNG or JPG and try again.',true);return;}pImg=im;pNW=im.naturalWidth;pNH=im.naturalHeight;const s=Math.min(1,900/pNW,700/pNH);pv.width=Math.round(pNW*s);pv.height=Math.round(pNH*s);
     pSel={x:0,y:0,w:pv.width,h:pv.height};$('patArea').style.display='block';drawPat();
     msg('msgPat','Drag a box over just the flashing part, then press <b>Extract &amp; use pattern</b>. Or press <b>Use whole image</b>.',false);URL.revokeObjectURL(im.src);};
+  im.onerror=()=>msg('msgPat',`This browser could not open "${esc(f.name)}" (file type: ${esc(f.type||'unknown')}). Try saving it as PNG or JPG, then upload it again.`,true);
   im.src=URL.createObjectURL(f);};
 const pt=e=>{const r=pv.getBoundingClientRect();return{x:clamp((e.clientX-r.left)*pv.width/r.width,0,pv.width),y:clamp((e.clientY-r.top)*pv.height/r.height,0,pv.height)};};
 pv.onpointerdown=e=>{if(!pImg)return;pv.setPointerCapture(e.pointerId);pDrag=pt(e);};
@@ -426,10 +427,10 @@ $('scanBtn').onclick=async()=>{
   $('scanBtn').disabled=true;$('cancelBtn').style.display='inline-block';$('bar').style.display='block';$('barFill').style.width='0%';
   const fC=mk(pattern.full.width,pattern.full.height),cC=mk(pattern.center.width,pattern.center.height);
   const fx=fC.getContext('2d',{willReadFrequently:true}),cx=cC.getContext('2d',{willReadFrequently:true});
-  let run=null,bestC=0,lastT=-1e9,stalled=false;
+  let run=null,miss=0,bestC=0,lastT=-1e9,stalled=false;
   const sim=(d,px)=>{let s=0;const n=Math.min(px.length,d.length>>2);for(let i=0;i<n;i++){const j=i*4,a=d[j]-px[i][0],b=d[j+1]-px[i][1],c=d[j+2]-px[i][2];s+=a*a+b*b+c*c;}return n?100*(1-Math.sqrt(s/(3*n))/255):0;};
-  // A flash is a run of matching frames. We keep the best frame of that run.
-  const close=()=>{if(run&&run.t-lastT>=P.cool){triggers.push({t:run.t,c:run.c,f:run.f});lastT=run.t;renderRows();}run=null;};
+  // A flash is a run of matching frames. It is timed at the FIRST matching frame, so the shake lands on the beat. One dropped frame inside a flash is tolerated.
+  const close=()=>{if(run&&run.t-lastT>=P.cool){triggers.push({t:run.t,c:run.c,f:run.f});lastT=run.t;renderRows();}run=null;miss=0;};
   const frame=t=>{
     fx.drawImage(v1,0,0,fC.width,fC.height);
     const cw=Math.max(1,Math.round(fC.width*P.ratio)),ch=Math.max(1,Math.round(fC.height*P.ratio));
@@ -438,8 +439,9 @@ $('scanBtn').onclick=async()=>{
     bestC=Math.max(bestC,c);
     if(c>=P.centerThr){
       const f=sim(fx.getImageData(0,0,fC.width,fC.height).data,pattern.full.pixels);
-      if(f>=P.fullThr){if(!run||c>run.c)run={t,c,f};return;}
+      if(f>=P.fullThr){miss=0;if(!run)run={t,c,f};else{run.c=Math.max(run.c,c);run.f=Math.max(run.f,f);}return;}
     }
+    if(run&&++miss<2)return;
     close();
   };
   const total=v1.duration||1,step=1/60;
@@ -499,7 +501,9 @@ $('v2File').onchange=function(){const f=this.files[0];if(!f)return;v2File=f;$('v
     if(v1ok&&Math.abs(v1.duration-v2.duration)>.5)msg('msgExp',`<b>Check the files.</b> Video 1 is ${v1.duration.toFixed(1)} s and Video 2 is ${v2.duration.toFixed(1)} s. They should be the same clip, or the flashes will land at the wrong time.`,true);
     else hideMsg('msgExp');};
   v2.onloadedmetadata=onV2;v2.oncanplay=onV2;v2.onloadeddata=onV2;};
-function drawV2(t){const P=readP();const tr=triggers.find(g=>t-g.t>=-P.attack&&t-g.t<P.duration);
+// Newest flash wins: when flashes are closer together than the shake is long, the new one takes over exactly on its beat instead of waiting for the older shake to finish.
+function activeTrig(t,P){let hit=null;for(const g of triggers){if(g.t-t<=P.attack)hit=g;else break;}return hit&&t-hit.t<P.duration?hit:null;}
+function drawV2(t){const P=readP();const tr=activeTrig(t,P);
   drawFrame(rctx,v2,rc.width,rc.height,tr?shakeAt(t-tr.t,P,rc.width,rc.height):null,P.mirror);}
 function refresh(){if(v2ok&&v2.paused)drawV2(v2.currentTime);}
 function loop(){if(v2.paused||v2.ended){rf=null;return;}drawV2(v2.currentTime);rf=requestAnimationFrame(loop);}
@@ -533,7 +537,7 @@ async function encodeOnce(MB,W,H,fps,bitrate,withAudio,P){
   const conf={input,output,tracks:'primary',
     video:{width:W,height:H,fit:'contain',frameRate:fps,codec:'avc',bitrate,keyFrameInterval:2,hardwareAcceleration:'no-preference',forceTranscode:true,processedWidth:W,processedHeight:H,
       process:sample=>{sample.draw(sctx,0,0,W,H);
-        const t=sample.timestamp,tr=triggers.find(g=>t-g.t>=-P.attack&&t-g.t<P.duration);
+        const t=sample.timestamp,tr=activeTrig(t,P);
         drawFrame(octx,src,W,H,tr?shakeAt(t-tr.t,P,W,H):null,P.mirror);return out;}}};
   conf.audio=withAudio?{codec:'aac',bitrate:192000}:{discard:true};
   const conversion=await MB.Conversion.init(conf);
